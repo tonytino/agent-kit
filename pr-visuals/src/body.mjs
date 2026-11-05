@@ -159,6 +159,10 @@ export function renderBlock({ manifest, owner, repo, basePath, sha, confirmed = 
     lines.push(`### ${escapeText(sc.name)}`, '', '| Viewport | Before | After |', '| --- | --- | --- |');
     /** @param {Side} side @param {string} label @param {string} vp */
     const cell = (side, label, vp) => {
+      if (label === 'before' && (side.error || !side.screenshot)) {
+        // Expected when the PR adds the page or UI. It does not fail the check.
+        return `Not present before this PR<br><sub>${escapeText(side.error ?? 'no screenshot')}</sub>`;
+      }
       if (side.error) return `capture failed: ${escapeText(side.error)}`;
       if (!side.screenshot) return 'capture failed: no screenshot';
       return `<img src="${escapeAttr(url(side.screenshot))}" alt="${escapeAttr(`${sc.name} ${vp} ${label}`)}" width="400">`;

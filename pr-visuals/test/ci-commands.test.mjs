@@ -280,7 +280,7 @@ test('generate captures, publishes, and updates the body', async (t) => {
   });
 });
 
-test('generate with a failed capture exits 1 and the check fails', async (t) => {
+test('generate with an after-side failure exits 1 and the check fails', async (t) => {
   if (!(await chromiumOk(t))) return;
   await withSite(async (siteUrl) => {
     const scenarios = '<!-- pr-visuals:scenarios\n{"scenarios":[{"name":"Home","path":"/","viewports":["desktop"]},{"name":"Private","path":"/private","viewports":["desktop"]}]}\n-->';
@@ -290,14 +290,50 @@ test('generate with a failed capture exits 1 and the check fails', async (t) => 
       const r = await run('generate', api, { GITHUB_SERVER_URL: `file://${remoteRoot}` });
       assert.equal(r.code, 1);
       assert.match(api.state.pr.body, /capture failed: HTTP 401 at \/private/);
-      assert.ok(api.state.comments.at(-1).body.includes(marker({ kind: 'captured', sha: HEAD, failed: 2 })));
+      assert.ok(api.state.comments.at(-1).body.includes(marker({ kind: 'captured', sha: HEAD, failed: 1 })));
       const c = await run('check', api);
       assert.equal(c.code, 1);
-      assert.match(c.stdout, /2 captures failed\. Fix the scenario steps and apply visuals:generate\./);
+      assert.match(c.stdout, /1 capture failed\. Fix the scenario steps and apply visuals:generate\./);
       const s = await run('still-valid', api);
       assert.equal(s.code, 1);
     } finally {
       api.server.close();
     }
   });
+});
+
+test('before-side failures do not fail generate or the check', async (t) => {
+  if (!(await chromiumOk(t))) return;
+  // Production lacks the new page and the new button. The PR preview has both.
+  const before = http.createServer((req, res) => {
+    if (req.url.startsWith('/new')) { res.writeHead(404, { 'content-type': 'text/html' }); res.end('<h1>Not found</h1>'); return; }
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end('<h1>Home</h1>');
+  });
+  const after = http.createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end('<h1>Home</h1><button>New</button><h2>New page</h2>');
+  });
+  await Promise.all([before, after].map((srv) => new Promise((r) => srv.listen(0, '127.0.0.1', r))));
+  const scenarios = '<!-- pr-visuals:scenarios\n{"scenarios":[{"name":"New page","path":"/new","viewports":["desktop"]},{"name":"New button","path":"/","viewports":["desktop"],"steps":[{"click":"role=button[name=\\"New\\"]"}]}]}\n-->';
+  const api = await fakeGitHub(pr(scenarios), {
+    before: { url: `http://127.0.0.1:${before.address().port}` },
+    after: { url: `http://127.0.0.1:${after.address().port}` },
+  });
+  const remoteRoot = await bareRemote('remotes-before');
+  try {
+    const r = await run('generate', api, { GITHUB_SERVER_URL: `file://${remoteRoot}` });
+    assert.equal(r.code, 0, r.stderr);
+    const body = api.state.pr.body;
+    assert.match(body, /\| desktop \| Not present before this PR<br><sub>HTTP 404 at \/new<\/sub> \| <img /);
+    assert.match(body, /\| desktop \| Not present before this PR<br><sub>step click: [^<]*<\/sub> \| <img /);
+    assert.ok(!body.includes('capture failed'));
+    assert.ok(api.state.comments.at(-1).body.includes(marker({ kind: 'captured', sha: HEAD, failed: 0 })));
+    const c = await run('check', api);
+    assert.equal(c.code, 0, c.stdout + c.stderr);
+  } finally {
+    before.close();
+    after.close();
+    api.server.close();
+  }
 });

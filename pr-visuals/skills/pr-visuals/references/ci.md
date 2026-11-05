@@ -11,7 +11,7 @@ The workflow runs on these `pull_request` events: `opened`, `reopened`, `synchro
 | Job | Runs when | Does |
 | --- | --- | --- |
 | `generate` | `visuals:generate` is applied | Removes the label, captures, publishes, updates the PR body, and posts the result comment. |
-| `still-valid` | `visuals:still-valid` is applied | Removes the label and confirms the latest capture for the head commit. Refuses when that capture has failed cells. |
+| `still-valid` | `visuals:still-valid` is applied | Removes the label and confirms the latest capture for the head commit. Refuses when that capture has failed after-side cells. |
 | `check` (status name `pr-visuals-check`) | Every event above, after the other jobs | Passes or fails the PR. `edited` runs only this job. |
 
 Nothing captures automatically. Only the `visuals:generate` label starts a capture.
@@ -33,7 +33,7 @@ In the example, replace `REPLACE_WITH_FULL_COMMIT_SHA` with that SHA. The workfl
 | `mode` | Yes | `check`, `generate`, or `still-valid`. |
 | `config` | No | Config path, relative to the repository root. Default: `.github/pr-visuals.json`. |
 | `github-token` | No | Token for the API and the push. Default: `github.token`. |
-| `bot-login` | No | Account whose result comments the check trusts. Default: `github-actions[bot]`. Set it when `github-token` belongs to a GitHub App or a user. |
+| `bot-login` | No | Account whose result comments the check trusts. Default: `github-actions[bot]`. Set it when `github-token` belongs to a GitHub App. Only GitHub App (Bot) accounts are supported. |
 
 ## 2. Add the config
 
@@ -116,14 +116,14 @@ In the branch protection rule or ruleset, make `pr-visuals-check` a required sta
 1. `visuals:none` is on the PR: pass.
 2. A result comment covers the head commit:
    - The PR body has no visuals block: fail. Apply `visuals:generate`.
-   - The capture has failed cells: fail. Fix the scenario steps and apply `visuals:generate`.
+   - The capture has failed after-side cells: fail. Fix the scenario steps and apply `visuals:generate`. Before-side failures show `Not present before this PR` and do not count.
    - Otherwise: pass. This includes a `visuals:still-valid` confirmation for the head commit.
 3. An older capture exists: fail as stale. Apply `visuals:generate` to recapture, or `visuals:still-valid` if the new commits do not change the UI.
 4. No capture exists: fail. Apply `visuals:generate` (with a scenarios block) or `visuals:none`.
 
 ## Trust model
 
-The check trusts only result comments from the bot account (`bot-login`, default `github-actions[bot]`). Each comment has a hidden `<!-- pr-visuals:result ... -->` marker with the commit SHA and the number of failed cells. Comments from other accounts are ignored. A visuals block that a person or an agent writes into the body does not pass the check.
+The check trusts only result comments from the bot account (`bot-login`, default `github-actions[bot]`). Each comment has a hidden `<!-- pr-visuals:result ... -->` marker with the commit SHA and the number of failed after-side cells. Comments from other accounts are ignored. A visuals block that a person or an agent writes into the body does not pass the check.
 
 The check is a process gate. It makes sure someone looked at the UI change. It does not prove that the UI is correct.
 

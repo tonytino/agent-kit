@@ -24,8 +24,16 @@ test('renders the block with meta, table, image URLs, and videos', () => {
   assert.match(b, /\| Viewport \| Before \| After \|/);
   assert.ok(b.includes('src="https://github.com/o/r/blob/pr-visuals/pr-1/aaaaaaa-9/filters/desktop-before.png?raw=true"'));
   assert.ok(b.includes('[before](https://github.com/o/r/blob/pr-visuals/pr-1/aaaaaaa-9/filters/desktop-before.webm?raw=true)'));
-  assert.match(b, /capture failed: step click: Timeout 15000ms exceeded\\\./);
+  assert.ok(b.includes('| mobile | Not present before this PR<br><sub>step click: Timeout 15000ms exceeded\\.</sub> | <img'), b);
+  assert.ok(!b.includes('capture failed'));
   assert.deepEqual(parseMeta(b), { version: 1, sha: A, confirmed: [] });
+});
+
+test('an after-side failure renders as capture failed', () => {
+  const m = { version: 1, scenarios: [{ name: 'X', slug: 'x', video: false,
+    cells: [{ viewport: 'desktop', before: { screenshot: 'x/desktop-before.png' }, after: { error: 'HTTP 500 at /x <b>' } }] }] };
+  const b = renderBlock({ manifest: m, owner: 'o', repo: 'r', basePath: 'p', sha: A });
+  assert.ok(b.includes('| capture failed: HTTP 500 at /x &lt;b&gt; |'), b);
 });
 
 test('escapes scenario names in headings and attributes', () => {

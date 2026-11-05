@@ -64,7 +64,7 @@ Use this path when the repository uses pr-visuals.
    Use the workflow file name that the repository uses. The run can take up to the deployment timeout (default 15 minutes) plus the capture time.
 4. Read the job comment: `gh pr view <number> --comments`.
 5. If the comment reports a failure, fix the scenarios block from the reason. Apply `visuals:generate` again.
-6. If a table cell shows `capture failed`, or the comment reports an HTTP error, fix the steps or the path from the reason. Apply `visuals:generate` again. A failed cell fails the check.
+6. If an after cell shows `capture failed`, or the comment reports failed captures, fix the steps or the path from the reason. Apply `visuals:generate` again. Only after-side failures fail the check. A before cell that shows `Not present before this PR` is expected for new pages and UI.
 
 On success, the job writes the visuals block into the PR body and the check passes.
 

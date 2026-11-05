@@ -60,8 +60,9 @@ test('captures before and after screenshots and videos with Chromium', async (t)
       outDir: out,
       headers: { 'x-test-token': 'tok' },
     });
-    assert.equal(total, 4);
-    assert.equal(failed, 2);
+    // Counts cover after-side cells only.
+    assert.equal(total, 2);
+    assert.equal(failed, 1);
     const cell = manifest.scenarios[0].cells[0];
     for (const f of [cell.before.screenshot, cell.after.screenshot, cell.before.video, cell.after.video]) {
       assert.ok(f, 'file recorded in manifest');
@@ -108,7 +109,7 @@ test('records HTTP errors and blocks navigation to another origin', async (t) =>
   const base = `http://127.0.0.1:${site.address().port}`;
   try {
     const out = path.join(tmp, 'errors');
-    const { manifest, failed, total } = await capture({
+    const { manifest, failed, total, beforeFailed } = await capture({
       beforeUrl: base, afterUrl: base,
       scenarios: [
         { name: 'Private', path: '/private', viewports: ['desktop'], video: false, steps: [] },
@@ -120,8 +121,9 @@ test('records HTTP errors and blocks navigation to another origin', async (t) =>
       viewports: { desktop: { width: 800, height: 600 } },
       outDir: out,
     });
-    assert.equal(total, 10);
-    assert.equal(failed, 8);
+    assert.equal(total, 5);
+    assert.equal(failed, 4);
+    assert.equal(beforeFailed, 4);
     const err = (i) => manifest.scenarios[i].cells[0].before.error;
     assert.equal(err(0), 'HTTP 401 at /private');
     assert.match(err(1), /^step click: navigation to another origin blocked: http:\/\/127\.0\.0\.1:\d+$/);

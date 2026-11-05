@@ -46,7 +46,8 @@ with no failed captures. Writes the reason to $GITHUB_STEP_SUMMARY. Exit 1 on fa
   generate: `Usage: pr-visuals generate
 
 Capture the scenarios in the PR description, publish the files to the pr-visuals branch, update the
-visuals block, and post a result comment. Exit 1 when any capture failed.
+visuals block, and post a result comment. Exit 1 when any after-side capture failed.
+Before-side failures show as "Not present before this PR" and do not fail.
 `,
   'still-valid': `Usage: pr-visuals still-valid
 
@@ -55,7 +56,7 @@ Confirm the latest capture for the head commit. Refused when the latest capture 
   capture: `Usage: pr-visuals capture --before-url URL --after-url URL --scenarios FILE|- --out DIR [--config FILE]
 
 Capture screenshots and videos. FILE is scenarios JSON or a PR description with a scenarios block.
-Writes DIR/manifest.json and prints it. Exit 1 when every capture failed.
+Writes DIR/manifest.json and prints it. Exit 1 when every after-side capture failed.
 `,
   render: `Usage: pr-visuals render --manifest FILE --repo OWNER/REPO --pr N --sha SHA --base-path PATH
 
@@ -331,9 +332,10 @@ async function cmdGenerate() {
           });
     log(`Before: ${new URL(beforeUrl).origin}  After: ${new URL(afterUrl).origin}`);
 
-    const { manifest, total, failed } = await capture({
+    const { manifest, total, failed, beforeFailed } = await capture({
       beforeUrl, afterUrl, scenarios, viewports: config.viewports, outDir, headers, fullPage: config.fullPage, log,
     });
+    if (beforeFailed) log(`${beforeFailed} before-side captures failed. They show as not present before this PR.`);
 
     const dest = destPath({ pr: number, sha: pr.headSha, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT });
     const files = manifestFiles(manifest);
@@ -352,13 +354,13 @@ async function cmdGenerate() {
     const marker = renderResultMarker({ kind: 'captured', sha: pr.headSha, failed });
     const sha7 = pr.headSha.slice(0, 7);
     if (failed) {
-      await report(`Captured visuals for ${sha7}. ${failed} of ${total} captures failed. Fix the scenario steps and apply \`${LABELS.generate}\`. See the Visuals section of the PR description.\n\nRun: ${runUrl()}\n${marker}`);
+      await report(`Captured visuals for ${sha7}. ${failed} of ${total} after-side captures failed. Fix the scenario steps and apply \`${LABELS.generate}\`. See the Visuals section of the PR description.\n\nRun: ${runUrl()}\n${marker}`);
       await writeSummary(`### pr-visuals\n\n${failedReason(failed)}`);
       process.stdout.write(`::error title=pr-visuals::${failedReason(failed)}\n`);
       return 1;
     }
     await report(`Captured visuals for ${sha7}. See the Visuals section of the PR description.\n\nRun: ${runUrl()}\n${marker}`);
-    await writeSummary(`### pr-visuals\n\nCaptured ${total} of ${total} cells for ${sha7}.`);
+    await writeSummary(`### pr-visuals\n\nCaptured ${total} of ${total} after-side cells for ${sha7}.`);
     return 0;
   } catch (err) {
     await report(`Could not capture visuals.\n\n${formatErrorMarkdown(err)}\n\nRun: ${runUrl()}`).catch(() => {});
@@ -488,7 +490,7 @@ async function cmdCapture(args) {
     beforeUrl, afterUrl, scenarios, viewports: config.viewports, outDir, headers, fullPage: config.fullPage, log,
   });
   process.stdout.write(`${JSON.stringify(manifest, null, 2)}\n`);
-  log(`Captured ${total - failed} of ${total} cells into ${outDir}. Manifest: ${path.join(outDir, 'manifest.json')}`);
+  log(`Captured ${total - failed} of ${total} after-side cells into ${outDir}. Manifest: ${path.join(outDir, 'manifest.json')}`);
   return failed === total ? 1 : 0;
 }
 

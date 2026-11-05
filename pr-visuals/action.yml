@@ -15,7 +15,7 @@ inputs:
     required: false
     default: ${{ github.token }}
   bot-login:
-    description: Account whose result comments the check trusts. Set it when github-token belongs to a GitHub App or a user.
+    description: Account whose result comments the check trusts. Set it when github-token belongs to a GitHub App. Only GitHub App (Bot) accounts are supported.
     required: false
     default: github-actions[bot]
 

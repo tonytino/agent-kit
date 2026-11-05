@@ -41,11 +41,13 @@ export async function launchChromium() {
 /**
  * Captures before and after screenshots (and optional videos) for every scenario and viewport.
  * A failing cell records its error and does not stop other cells.
+ * `total` and `failed` count after-side cells only. A before-side failure is expected when the PR
+ * adds a page or UI, so it is reported in `beforeFailed` and does not fail the gate.
  * @param {{
  *   beforeUrl: string, afterUrl: string, scenarios: Scenario[], viewports: Record<string, Viewport>,
  *   outDir: string, headers?: Record<string, string>, fullPage?: boolean, log?: (msg: string) => void
  * }} opts
- * @returns {Promise<{ manifest: Manifest, total: number, failed: number }>}
+ * @returns {Promise<{ manifest: Manifest, total: number, failed: number, beforeFailed: number }>}
  */
 export async function capture({ beforeUrl, afterUrl, scenarios, viewports, outDir, headers = {}, fullPage = true, log = () => {} }) {
   const bases = { before: new URL(beforeUrl).href, after: new URL(afterUrl).href };
@@ -55,6 +57,7 @@ export async function capture({ beforeUrl, afterUrl, scenarios, viewports, outDi
   const manifest = { version: 1, scenarios: [] };
   let total = 0;
   let failed = 0;
+  let beforeFailed = 0;
   const used = new Set();
   try {
     for (const sc of scenarios) {
@@ -68,11 +71,12 @@ export async function capture({ beforeUrl, afterUrl, scenarios, viewports, outDi
         /** @type {Record<'before' | 'after', Side>} */
         const sides = { before: {}, after: {} };
         for (const side of /** @type {const} */ (['before', 'after'])) {
-          total++;
+          if (side === 'after') total++;
           log(`Capturing "${sc.name}" ${vpName} ${side}`);
           sides[side] = await captureCell({ browser, base: bases[side], scenario: sc, viewport: vp, outDir, file: `${slug}/${vpName}-${side}`, headers, fullPage });
           if (sides[side].error) {
-            failed++;
+            if (side === 'after') failed++;
+            else beforeFailed++;
             log(`  failed: ${sides[side].error}`);
           }
         }
@@ -85,7 +89,7 @@ export async function capture({ beforeUrl, afterUrl, scenarios, viewports, outDi
     await rm(path.join(outDir, '.video-tmp'), { recursive: true, force: true });
   }
   await writeFile(path.join(outDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-  return { manifest, total, failed };
+  return { manifest, total, failed, beforeFailed };
 }
 
 /**
