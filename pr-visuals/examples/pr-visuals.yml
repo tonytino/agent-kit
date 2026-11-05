@@ -1,0 +1,63 @@
+# Copy to .github/workflows/pr-visuals.yml. Make "pr-visuals / check" a required status check.
+#
+# Labels:
+#   visuals:none         The PR has no UI change. The check passes.
+#   visuals:generate     Capture visuals and write them into the PR description. The job removes the label.
+#   visuals:still-valid  Confirm the visuals for the current head commit. The job removes the label.
+#
+# A label removed with GITHUB_TOKEN does not start a new workflow run. For this reason the check job
+# runs in the same run, after generate and still-valid.
+# Fork PRs get a read-only token. generate and still-valid do not work for fork PRs.
+name: pr-visuals
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+concurrency:
+  group: pr-visuals-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  generate:
+    if: github.event.action == 'labeled' && github.event.label.name == 'visuals:generate'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      deployments: read
+    env:
+      # Optional. JSON object of headers, sent only to the before and after origins.
+      # Example secret value: {"x-vercel-protection-bypass":"...","x-vercel-set-bypass-cookie":"true"}
+      PR_VISUALS_HEADERS: ${{ secrets.PR_VISUALS_HEADERS }}
+    steps:
+      # Pin to a full commit SHA of tonytino/agent-kit.
+      - uses: tonytino/agent-kit/pr-visuals@main
+        with:
+          mode: generate
+
+  still-valid:
+    if: github.event.action == 'labeled' && github.event.label.name == 'visuals:still-valid'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: tonytino/agent-kit/pr-visuals@main
+        with:
+          mode: still-valid
+
+  check:
+    needs: [generate, still-valid]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: tonytino/agent-kit/pr-visuals@main
+        with:
+          mode: check

@@ -1,0 +1,11 @@
+{
+  "name": "pr-visuals",
+  "description": "Put before/after Playwright screenshots and videos of a web app into a pull request description. Includes a label-driven CI gate.",
+  "version": "0.1.0",
+  "author": {
+    "name": "tonytino"
+  },
+  "repository": "https://github.com/tonytino/agent-kit",
+  "license": "MIT",
+  "keywords": ["skills", "playwright", "screenshots", "pull-requests", "ci"]
+}

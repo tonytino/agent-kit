@@ -1,5 +1,5 @@
 {
-  "name": "claude-code-hooks",
+  "name": "agent-kit",
   "owner": {
     "name": "tonytino"
   },
@@ -9,6 +9,12 @@
       "source": "./block-self-bind-schedule",
       "description": "Denies tool calls that schedule wakeups of the current session. Each such wake resends the full conversation and can drain usage.",
       "version": "0.2.0"
+    },
+    {
+      "name": "pr-visuals",
+      "source": "./pr-visuals",
+      "description": "Put before/after Playwright screenshots and videos of a web app into a pull request description. Includes a label-driven CI gate.",
+      "version": "0.1.0"
     }
   ]
 }

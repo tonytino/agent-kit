@@ -1,0 +1,20 @@
+{
+  "name": "pr-visuals",
+  "version": "0.1.0",
+  "description": "Before/after Playwright screenshots and videos in pull request descriptions, gated by labels.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "pr-visuals": "bin/pr-visuals.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "dependencies": {
+    "playwright": "1.63.0"
+  }
+}

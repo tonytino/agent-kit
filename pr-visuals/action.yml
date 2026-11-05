@@ -1,0 +1,67 @@
+name: pr-visuals
+description: Gate pull requests on before/after Playwright screenshots in the PR description, driven by labels.
+author: tonytino
+
+inputs:
+  mode:
+    description: "check, generate, or still-valid."
+    required: true
+  config:
+    description: Path to the config file, relative to the repository root.
+    required: false
+    default: .github/pr-visuals.json
+  github-token:
+    description: Token for the GitHub API and for pushing to the pr-visuals branch.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check mode
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+      run: |
+        case "$MODE" in
+          check|generate|still-valid) ;;
+          *) echo "::error title=pr-visuals::mode must be check, generate, or still-valid."; exit 1 ;;
+        esac
+
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 22
+
+    - name: Install pr-visuals
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --no-audit --no-fund
+
+    - name: Read Playwright version
+      id: playwright
+      if: inputs.mode == 'generate'
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: echo "version=$(node -p 'require("./package.json").dependencies.playwright')" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Playwright browsers
+      if: inputs.mode == 'generate'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
+
+    - name: Install Chromium
+      if: inputs.mode == 'generate'
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npx --no-install playwright install --with-deps chromium
+
+    - name: Run pr-visuals
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_VISUALS_CONFIG: ${{ inputs.config }}
+      run: node "$GITHUB_ACTION_PATH/bin/pr-visuals.mjs" "$MODE"
