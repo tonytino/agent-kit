@@ -16,6 +16,14 @@ The workflow has three jobs:
 
 Nothing captures automatically. Only the `visuals:generate` label starts a capture.
 
+The jobs use the action `tonytino/agent-kit/pr-visuals`. Pin it to a full commit SHA. The action has these inputs:
+
+| Input | Required | Value |
+| --- | --- | --- |
+| `mode` | Yes | `check`, `generate`, or `still-valid`. |
+| `config` | No | Config path, relative to the repository root. Default: `.github/pr-visuals.json`. |
+| `github-token` | No | Token for the API and the push. Default: `github.token`. |
+
 ## 2. Add the config
 
 Copy [`examples/pr-visuals.json`](https://github.com/tonytino/agent-kit/blob/main/pr-visuals/examples/pr-visuals.json) to `.github/pr-visuals.json`. Edit it for your app.
@@ -32,20 +40,20 @@ Copy [`examples/pr-visuals.json`](https://github.com/tonytino/agent-kit/blob/mai
 }
 ```
 
-| Field | Value |
-| --- | --- |
-| `before.url` | URL of the current app, usually production. |
-| `after` | `{ "url": "..." }`, or `{ "source": "github-deployment", ... }`. |
-| `after.environment` | Optional. Deployment environment name to match. |
-| `after.timeoutMinutes` | How long to wait for a successful deployment. |
-| `viewports` | Named viewports. Scenarios pick from these names. |
-| `fullPage` | `true` takes full-page screenshots. |
+| Field | Required | Value |
+| --- | --- | --- |
+| `before.url` | Yes | URL of the current app, usually production. |
+| `after` | Yes | `{ "url": "..." }`, or `{ "source": "github-deployment", ... }`. |
+| `after.environment` | No | Deployment environment name to match. Default: any environment. |
+| `after.timeoutMinutes` | No | Minutes to wait for a successful deployment, 1 to 120. Default: 15. |
+| `viewports` | No | 1 to 10 named viewports. Scenarios pick from these names. Default: `desktop` (1280x800) and `mobile` (390x844). |
+| `fullPage` | No | `true` takes full-page screenshots. Default: `true`. |
 
 URLs accept `{number}` (PR number) and `{sha}` (head commit). Example: `"https://pr-{number}.example.com"`.
 
 `github-deployment` finds the newest deployment for the head commit with a `success` status. It uses the status `environment_url`, or `target_url` if that is empty. It polls every 15 seconds until the timeout. Hosts that post GitHub deployments work, for example Vercel and Netlify.
 
-pr-visuals validates the config strictly. An unknown or invalid field fails the job with a clear error.
+pr-visuals validates the config strictly. An unknown or invalid field fails the job with a clear error. The job reads the config from the workspace. If the file is not there, it reads the file from the PR base branch.
 
 ## 3. Create the labels
 
@@ -65,7 +73,7 @@ gh label create visuals:still-valid --description "The visuals still match this 
 
 ## 4. Add headers (optional)
 
-If your preview URLs need a header, add a repository secret `PR_VISUALS_HEADERS`. The value is a JSON object.
+If your preview URLs need a header, add a repository secret `PR_VISUALS_HEADERS`. The value is a JSON object. The example workflow passes it to the `generate` job.
 
 ```json
 { "x-vercel-protection-bypass": "<secret>" }

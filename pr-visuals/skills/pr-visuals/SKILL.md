@@ -56,13 +56,14 @@ Setup for a new repository: [references/ci.md](references/ci.md).
    - Before: run the app at the base commit, or use the deployed production URL.
    - After: run the app at the head commit, or use the deployed preview URL.
 2. Save the scenarios JSON (the content of the block) to `scenarios.json`.
-3. Capture:
+3. Capture. This writes the files and `manifest.json` to the `--out` directory:
    ```sh
-   pr-visuals capture --before-url <before> --after-url <after> --scenarios scenarios.json --out visuals > manifest.json
+   pr-visuals capture --before-url <before> --after-url <after> --scenarios scenarios.json --out visuals
    ```
-4. Publish. This pushes the files to the `pr-visuals` branch and prints the visuals block:
+   Viewports default to `desktop` and `mobile`. To use the repository viewports, add `--config .github/pr-visuals.json`.
+4. Publish. This pushes the files to the `pr-visuals` branch of the `origin` remote and prints the visuals block:
    ```sh
-   pr-visuals publish --manifest manifest.json --pr <number> --sha <head sha>
+   pr-visuals publish --manifest visuals/manifest.json --pr <number> --sha <head sha>
    ```
 5. Paste the printed block into the PR body exactly as printed.
 

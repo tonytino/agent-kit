@@ -4,7 +4,9 @@ The scenarios block tells pr-visuals what to capture. Write it in the PR body. I
 
 ## Format
 
-The block starts with `<!-- pr-visuals:scenarios` and ends with `-->`. The content is one JSON object.
+The block starts with `<!-- pr-visuals:scenarios` and ends with `-->`. The content is one JSON object with one key, `scenarios`. Keep exactly one block in the PR body.
+
+For `pr-visuals capture --scenarios`, give a file with the JSON object, or a file that contains the block.
 
 ```
 <!-- pr-visuals:scenarios
