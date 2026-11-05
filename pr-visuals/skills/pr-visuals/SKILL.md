@@ -119,7 +119,7 @@ The visuals belong to one commit. After each push, decide again.
 With the pr-visuals check:
 
 - The push changes the UI: update the scenarios if needed. Apply `visuals:generate`.
-- The push does not change the UI: apply `visuals:still-valid`. This does not pass a capture with failed cells.
+- The push does not change the UI: apply `visuals:still-valid`. This does not pass a capture with failed after-side cells.
 
 Without the check:
 

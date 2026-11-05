@@ -40,8 +40,8 @@ The Claude plugin wrapper is for Claude Code. `block-self-bind-schedule` is a Cl
 The `pr-visuals-check` status passes when one of these is true:
 
 - The PR has `visuals:none`.
-- A capture for the head commit has no failed cells.
-- `visuals:still-valid` confirmed the head commit, and the last capture has no failed cells.
+- A capture for the head commit has no failed after-side cells.
+- `visuals:still-valid` confirmed the head commit, and the last capture has no failed after-side cells.
 
 **Parts.**
 
