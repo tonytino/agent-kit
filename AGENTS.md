@@ -39,11 +39,17 @@ CI also runs `shellcheck` on shell scripts and validates every JSON file.
    - `name` equals the skill directory name.
    - `description` says what the skill does and when to use it. Maximum 1024 characters.
    - Keep `SKILL.md` under 500 lines. Put detail in `references/`, one level deep.
-3. For Claude Code, add `<tool>/.claude-plugin/plugin.json`. Optional for skills. Required for hooks.
+3. Add `<tool>/.claude-plugin/plugin.json` for every Claude Code plugin. This is a repository convention.
 4. Add an entry to `.claude-plugin/marketplace.json`. Keep the version equal to `plugin.json`.
 5. Add tests. Add them to `.github/workflows/test.yml`.
 6. Add a row to the tools table and a section in `README.md`.
-7. Add an entry to `CHANGELOG.md`.
+7. Add an entry to `CHANGELOG.md` under a `## [<tool> X.Y.Z] - YYYY-MM-DD` heading.
+
+## Release a tool
+
+1. Set the version in `plugin.json`, `marketplace.json`, and `package.json` if the tool has one.
+2. Move the `CHANGELOG.md` entry under the version heading. Add the link reference to the tag.
+3. After the merge, tag the commit `<tool>-vX.Y.Z`, for example `pr-visuals-v0.1.0`. Push the tag.
 
 ## Conventions
 

@@ -31,23 +31,27 @@ The Claude plugin wrapper is for Claude Code. `block-self-bind-schedule` is a Cl
 
 **Labels control it.** Nothing runs automatically.
 
-| Label | Effect |
+| Label | Description |
 | --- | --- |
 | `visuals:none` | No UI impact. The pr-visuals check passes. |
-| `visuals:generate` | Capture before/after visuals into the PR body. Removed after the run starts. |
-| `visuals:still-valid` | The visuals still match this commit. Use after changes that do not affect the UI. |
+| `visuals:generate` | Capture before/after visuals into the PR body. The job removes this label. |
+| `visuals:still-valid` | The visuals still match this commit. Use after changes that do not affect the UI. The job removes this label. |
 
-The `pr-visuals / check` status fails until the PR has `visuals:none` or visuals for the head commit.
+The `pr-visuals-check` status passes when one of these is true:
+
+- The PR has `visuals:none`.
+- A capture for the head commit has no failed cells.
+- `visuals:still-valid` confirmed the head commit, and the last capture has no failed cells.
 
 **Parts.**
 
 - Skill: [`SKILL.md`](pr-visuals/skills/pr-visuals/SKILL.md). Tells the agent when and how to add visuals.
-- CLI: `pr-visuals` with commands `check`, `generate`, `still-valid`, `capture`, `render`, and `publish`.
-- GitHub Action: [`pr-visuals/action.yml`](pr-visuals/action.yml).
+- CLI: commands `check`, `generate`, `still-valid`, `capture`, `render`, and `publish`. The CLI is not on your PATH. Run it as `node <clone>/pr-visuals/cli/pr-visuals.mjs`.
+- GitHub Action: [`pr-visuals/action.yml`](pr-visuals/action.yml). Pin it to a commit of a `pr-visuals-vX.Y.Z` tag.
 
-**Set up CI.** Follow [`references/ci.md`](pr-visuals/skills/pr-visuals/references/ci.md). Examples: [`examples/`](pr-visuals/examples).
+**Set up CI.** Follow [`references/ci.md`](pr-visuals/skills/pr-visuals/references/ci.md). It also covers the trust model, security, and the `pr-visuals` branch. Examples: [`examples/`](pr-visuals/examples).
 
-**Use without CI.** The skill describes a local path. The agent runs `pr-visuals capture` and `pr-visuals publish`, then pastes the block into the PR body. This needs Node.js 22 or later and Playwright Chromium.
+**Use without CI.** The skill describes a local path. The agent runs `capture` and `publish`, then pastes the block into the PR body. This needs Node.js 22 or later, Playwright Chromium, and push access to the repository.
 
 ## block-self-bind-schedule
 

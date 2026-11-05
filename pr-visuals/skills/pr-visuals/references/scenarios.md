@@ -34,11 +34,11 @@ For `pr-visuals capture --scenarios`, give a file with the JSON object, or a fil
 
 | Field | Required | Value |
 | --- | --- | --- |
-| `name` | Yes | Heading in the visuals block. Must be unique in the block. |
-| `path` | Yes | Page to open. A relative path that starts with `/`. |
+| `name` | Yes | Heading in the visuals block. Unique in the block. 1 to 100 characters. No control characters. |
+| `path` | Yes | Page to open. A relative path that starts with `/`. Maximum 2000 characters. |
 | `viewports` | No | Viewport names from the config. Default: all config viewports. |
 | `video` | No | `true` records a `.webm` video of each side. Default: `false`. |
-| `steps` | No | Actions to run after the page loads. Maximum 30. |
+| `steps` | No | Actions to run after the page loads. 0 to 30 steps. |
 
 Limits: 1 to 10 scenarios per block.
 
@@ -47,6 +47,7 @@ Limits: 1 to 10 scenarios per block.
 - Start `path` and `goto` with `/`.
 - Do not start them with `//`.
 - Do not include a scheme or a host.
+- Do not include whitespace or control characters.
 
 pr-visuals opens the same path on the before URL and on the after URL. A path that resolves to a different origin is a validation error.
 
@@ -56,18 +57,30 @@ Each step is an object with exactly one key. An unknown key is a validation erro
 
 | Step | Value | Example |
 | --- | --- | --- |
-| `goto` | Relative path | `{ "goto": "/settings" }` |
+| `goto` | Relative path, same rules as `path` | `{ "goto": "/settings" }` |
 | `click` | Selector | `{ "click": "role=button[name=\"Save\"]" }` |
-| `fill` | `[selector, value]` | `{ "fill": ["#email", "a@example.com"] }` |
-| `press` | Key | `{ "press": "Enter" }` |
+| `fill` | `[selector, value]`. Value: string, maximum 2000 characters | `{ "fill": ["#email", "a@example.com"] }` |
+| `press` | Key name, maximum 50 characters | `{ "press": "Enter" }` |
 | `hover` | Selector | `{ "hover": "text=Help" }` |
 | `waitFor` | Selector | `{ "waitFor": "text=Saved" }` |
-| `wait` | Milliseconds, 0 to 10000 | `{ "wait": 500 }` |
-| `scroll` | Pixels (number) | `{ "scroll": 800 }` |
+| `wait` | Integer milliseconds, 0 to 10000 | `{ "wait": 500 }` |
+| `scroll` | Integer pixels, -100000 to 100000. Negative scrolls up | `{ "scroll": 800 }` |
+
+A selector is a non-empty string of at most 500 characters.
 
 Selectors use [Playwright selector syntax](https://playwright.dev/docs/locators). Prefer role and text selectors. They survive markup changes better than CSS classes.
 
-Each step has a 15 second timeout. A failed step marks that cell as `capture failed` in the table. Other cells still run.
+Each step has a 15 second timeout.
+
+## Failed cells
+
+A cell fails when:
+
+- A step fails or times out.
+- The page responds with HTTP status 400 or higher.
+- The page navigates to a different origin.
+
+A failed cell shows `capture failed: <reason>` in the table. Other cells still run. Any failed cell fails the pr-visuals check. `visuals:still-valid` does not override it. Fix the scenario and apply `visuals:generate` again.
 
 ## How each cell is captured
 
@@ -76,7 +89,7 @@ For each scenario, viewport, and side (before and after), pr-visuals:
 1. Opens a fresh browser context with reduced motion.
 2. Opens `path` and waits for the network to go idle.
 3. Runs the steps in order.
-4. Takes a full-page screenshot. It also saves a video when `video` is `true`.
+4. Takes a screenshot. It is full page unless the config sets `fullPage` to `false`. It also saves a video when `video` is `true`.
 
 ## Choose scenarios
 
