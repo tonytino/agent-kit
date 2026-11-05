@@ -1,10 +1,26 @@
 # Changelog
 
-Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow [SemVer](https://semver.org/).
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each tool has its own versions. They follow [SemVer](https://semver.org/). Tool tags have the form `<tool>-vX.Y.Z`. Repository changes that are not part of a tool go under a "Repository" heading.
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-09-11
+## Repository - 2026-11-05
+
+### Changed
+- The repository and marketplace name is `agent-kit`. Run `/plugin marketplace add tonytino/agent-kit`, then reinstall each plugin with `@agent-kit`, for example `/plugin install block-self-bind-schedule@agent-kit`. Old repository URLs redirect.
+- CI pins GitHub Actions to full commit SHAs.
+
+### Added
+- `AGENTS.md` with repository rules, and `CLAUDE.md` that imports it.
+- CI job that runs the pr-visuals tests.
+
+## [pr-visuals 0.1.0] - 2026-11-05
+
+### Added
+- `pr-visuals` skill, CLI, and GitHub Action. Put before/after Playwright screenshots and videos of a web app into PR descriptions.
+- Labels `visuals:none`, `visuals:generate`, and `visuals:still-valid`, and the `pr-visuals-check` status.
+
+## [block-self-bind-schedule 0.2.0] - 2026-09-11
 
 ### Added
 - Deny `create_trigger` when `persistent_session_id` is the current session.
@@ -19,11 +35,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - Fail closed when `jq` is missing or the policy errors.
 - Shorter deny reasons and descriptions.
 
-## [0.1.0] - 2026-09-09
+## [block-self-bind-schedule 0.1.0] - 2026-09-09
 
 ### Added
 - `block-self-bind-schedule` plugin. Denies `send_later` and self-bind `create_trigger`.
 
-[Unreleased]: https://github.com/tonytino/claude-code-hooks/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/tonytino/claude-code-hooks/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/tonytino/claude-code-hooks/releases/tag/v0.1.0
+[Unreleased]: https://github.com/tonytino/agent-kit/commits/main
+[pr-visuals 0.1.0]: https://github.com/tonytino/agent-kit/releases/tag/pr-visuals-v0.1.0
+[block-self-bind-schedule 0.2.0]: https://github.com/tonytino/agent-kit/compare/v0.1.0...v0.2.0
+[block-self-bind-schedule 0.1.0]: https://github.com/tonytino/agent-kit/releases/tag/v0.1.0
