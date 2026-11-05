@@ -4,6 +4,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## [Unreleased]
 
+## pr-visuals 0.1.0 - 2026-11-05
+
+### Added
+- `pr-visuals` 0.1.0. Puts before/after Playwright screenshots and videos of a web app into PR descriptions. Includes an Agent Skills skill, a CLI, and a GitHub Action.
+- Labels `visuals:none`, `visuals:generate`, and `visuals:still-valid`, and the `pr-visuals / check` status.
+- `AGENTS.md` with repository rules.
+
+### Changed
+- The marketplace name is `agent-kit`. Install commands use `@agent-kit`, for example `/plugin install block-self-bind-schedule@agent-kit`. Old repository URLs redirect.
+
 ## [0.2.0] - 2026-09-11
 
 ### Added
@@ -24,6 +34,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Added
 - `block-self-bind-schedule` plugin. Denies `send_later` and self-bind `create_trigger`.
 
-[Unreleased]: https://github.com/tonytino/claude-code-hooks/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/tonytino/claude-code-hooks/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/tonytino/claude-code-hooks/releases/tag/v0.1.0
+[Unreleased]: https://github.com/tonytino/agent-kit/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tonytino/agent-kit/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/tonytino/agent-kit/releases/tag/v0.1.0
