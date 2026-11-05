@@ -67,7 +67,7 @@ Setup for a new repository: [references/ci.md](references/ci.md).
    ```
 5. Paste the printed block into the PR body exactly as printed.
 
-If `pr-visuals` is not on your PATH, clone `https://github.com/tonytino/agent-kit`. Then run `npm ci` and `npx playwright install chromium` in `pr-visuals/`. Run the CLI as `node <clone>/pr-visuals/bin/pr-visuals.mjs`.
+If `pr-visuals` is not on your PATH, clone `https://github.com/tonytino/agent-kit`. Then run `npm ci` and `npx playwright install chromium` in `pr-visuals/`. Run the CLI as `node <clone>/pr-visuals/cli/pr-visuals.mjs`.
 
 ## 4. After later pushes
 

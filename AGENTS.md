@@ -12,7 +12,7 @@ block-self-bind-schedule/         Claude Code hook plugin.
 pr-visuals/                       Skill, CLI, and GitHub Action.
   .claude-plugin/plugin.json
   skills/pr-visuals/              Agent Skills skill: SKILL.md, references/
-  bin/pr-visuals.mjs              CLI entry point
+  cli/pr-visuals.mjs              CLI entry point
   src/                            CLI modules
   test/                           node:test tests
   action.yml                      Composite GitHub Action
