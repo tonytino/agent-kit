@@ -130,4 +130,5 @@ Without the check:
 
 - Never add contrived visuals. If nothing visible changed, use `visuals:none`.
 - Paste the visuals block only as printed. Never change its content.
+- Do not remove the visuals block. The check fails without it.
 - Keep the scenarios block in the body. Each capture reads it.
