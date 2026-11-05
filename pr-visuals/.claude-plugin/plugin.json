@@ -5,7 +5,7 @@
   "author": {
     "name": "tonytino"
   },
-  "repository": "https://github.com/tonytino/agent-sdk",
+  "repository": "https://github.com/tonytino/agent-kit",
   "license": "MIT",
   "keywords": ["skills", "playwright", "screenshots", "pull-requests", "ci"]
 }

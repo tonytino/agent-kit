@@ -39,8 +39,8 @@ test('check fails without a token', () => {
 });
 
 test('repoFromRemote parses GitHub remotes', () => {
-  assert.deepEqual(repoFromRemote('git@github.com:tonytino/agent-sdk.git'), { owner: 'tonytino', repo: 'agent-sdk' });
-  assert.deepEqual(repoFromRemote('https://github.com/tonytino/agent-sdk'), { owner: 'tonytino', repo: 'agent-sdk' });
+  assert.deepEqual(repoFromRemote('git@github.com:tonytino/agent-kit.git'), { owner: 'tonytino', repo: 'agent-kit' });
+  assert.deepEqual(repoFromRemote('https://github.com/tonytino/agent-kit'), { owner: 'tonytino', repo: 'agent-kit' });
   assert.throws(() => repoFromRemote('https://gitlab.com/a/b'), /Pass --repo/);
 });
 

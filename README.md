@@ -1,4 +1,4 @@
-# agent-sdk
+# agent-kit
 
 Tools for building with coding agents: skills, plugins, hooks, CI actions.
 
@@ -12,9 +12,9 @@ Tools for building with coding agents: skills, plugins, hooks, CI actions.
 ### Claude Code
 
 ```
-/plugin marketplace add tonytino/agent-sdk
-/plugin install pr-visuals@agent-sdk
-/plugin install block-self-bind-schedule@agent-sdk
+/plugin marketplace add tonytino/agent-kit
+/plugin install pr-visuals@agent-kit
+/plugin install block-self-bind-schedule@agent-kit
 ```
 
 ### Other agents

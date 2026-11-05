@@ -4,7 +4,7 @@ Set up pr-visuals in a repository once. After that, agents and people control it
 
 ## 1. Add the workflow
 
-Copy [`examples/pr-visuals.yml`](https://github.com/tonytino/agent-sdk/blob/main/pr-visuals/examples/pr-visuals.yml) to `.github/workflows/pr-visuals.yml`.
+Copy [`examples/pr-visuals.yml`](https://github.com/tonytino/agent-kit/blob/main/pr-visuals/examples/pr-visuals.yml) to `.github/workflows/pr-visuals.yml`.
 
 The workflow runs on these `pull_request` events: `opened`, `reopened`, `synchronize`, `labeled`, `unlabeled`, and `edited`.
 
@@ -20,10 +20,10 @@ Nothing captures automatically. Only the `visuals:generate` label starts a captu
 
 ### Pin the action
 
-The jobs use the action `tonytino/agent-sdk/pr-visuals`. Pin it to the full commit SHA of a release tag. Tags have the form `pr-visuals-vX.Y.Z`.
+The jobs use the action `tonytino/agent-kit/pr-visuals`. Pin it to the full commit SHA of a release tag. Tags have the form `pr-visuals-vX.Y.Z`.
 
 ```yaml
-- uses: tonytino/agent-sdk/pr-visuals@<full-commit-sha> # pr-visuals-v0.1.0
+- uses: tonytino/agent-kit/pr-visuals@<full-commit-sha> # pr-visuals-v0.1.0
 ```
 
 In the example, replace `REPLACE_WITH_FULL_COMMIT_SHA` with that SHA. The workflow fails until you do.
@@ -37,7 +37,7 @@ In the example, replace `REPLACE_WITH_FULL_COMMIT_SHA` with that SHA. The workfl
 
 ## 2. Add the config
 
-Copy [`examples/pr-visuals.json`](https://github.com/tonytino/agent-sdk/blob/main/pr-visuals/examples/pr-visuals.json) to `.github/pr-visuals.json`. Edit it for your app.
+Copy [`examples/pr-visuals.json`](https://github.com/tonytino/agent-kit/blob/main/pr-visuals/examples/pr-visuals.json) to `.github/pr-visuals.json`. Edit it for your app.
 
 ```json
 {

@@ -5,7 +5,7 @@ Rules for agents and people who change this repository.
 ## Layout
 
 ```
-.claude-plugin/marketplace.json   Claude Code marketplace "agent-sdk". Lists every plugin.
+.claude-plugin/marketplace.json   Claude Code marketplace "agent-kit". Lists every plugin.
 block-self-bind-schedule/         Claude Code hook plugin.
   .claude-plugin/plugin.json
   hooks/                          hooks.json, guard.sh, guard.jq, remind.sh
