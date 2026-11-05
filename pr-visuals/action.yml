@@ -1,5 +1,5 @@
 name: pr-visuals
-description: Gate pull requests on before/after Playwright screenshots in the PR description, driven by labels.
+description: Gate pull requests on before/after Playwright screenshots and videos in the PR description, driven by labels.
 author: tonytino
 
 inputs:

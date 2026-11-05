@@ -6,9 +6,10 @@
 # Make "pr-visuals-check" a required status check.
 #
 # Labels:
-#   visuals:none         The PR has no UI change. The check passes.
-#   visuals:generate     Capture visuals and write them into the PR description. The job removes the label.
-#   visuals:still-valid  Confirm the latest capture for the current head commit. The job removes the label.
+#   visuals:none         No UI impact. The pr-visuals check passes.
+#   visuals:generate     Capture before/after visuals into the PR body. The job removes this label.
+#   visuals:still-valid  The visuals still match this commit. Use after changes that do not affect
+#                        the UI. The job removes this label.
 #
 # A label removed with GITHUB_TOKEN does not start a new workflow run. For this reason the check job
 # runs in the same run, after generate and still-valid.
