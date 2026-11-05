@@ -7,13 +7,17 @@ inputs:
     description: "check, generate, or still-valid."
     required: true
   config:
-    description: Path to the config file, relative to the repository root.
+    description: Path to the config file in the repository. Read from the PR base branch.
     required: false
     default: .github/pr-visuals.json
   github-token:
     description: Token for the GitHub API and for pushing to the pr-visuals branch.
     required: false
     default: ${{ github.token }}
+  bot-login:
+    description: Account whose result comments the check trusts. Set it when github-token belongs to a GitHub App or a user.
+    required: false
+    default: github-actions[bot]
 
 runs:
   using: composite
@@ -33,7 +37,18 @@ runs:
       with:
         node-version: 22
 
+    # Uses only Node.js built-ins, so it runs before npm ci and reports even if the install fails.
+    - name: Acknowledge label
+      id: begin
+      if: inputs.mode != 'check'
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: node "$GITHUB_ACTION_PATH/cli/pr-visuals.mjs" begin "$MODE"
+
     - name: Install pr-visuals
+      if: inputs.mode == 'generate'
       shell: bash
       working-directory: ${{ github.action_path }}
       run: npm ci --no-audit --no-fund
@@ -64,4 +79,16 @@ runs:
         MODE: ${{ inputs.mode }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PR_VISUALS_CONFIG: ${{ inputs.config }}
+        PR_VISUALS_BOT_LOGIN: ${{ inputs.bot-login }}
+        PR_VISUALS_COMMENT_ID: ${{ steps.begin.outputs.comment-id }}
+        PR_VISUALS_BEGUN: ${{ steps.begin.outcome == 'success' && '1' || '' }}
       run: node "$GITHUB_ACTION_PATH/cli/pr-visuals.mjs" "$MODE"
+
+    - name: Report failure
+      if: failure() && inputs.mode != 'check'
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_VISUALS_COMMENT_ID: ${{ steps.begin.outputs.comment-id }}
+      run: node "$GITHUB_ACTION_PATH/cli/pr-visuals.mjs" report-failure "$MODE"

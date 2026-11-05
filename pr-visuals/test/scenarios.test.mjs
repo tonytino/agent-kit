@@ -93,3 +93,11 @@ test('unknown viewport and unknown scenario keys fail', () => {
   assert.throws(() => parseScenariosJson(one({ video: 'yes' }), VPS), /Invalid/);
   assert.throws(() => parseScenariosJson('{"scenarios":[],"extra":1}', VPS), /Invalid/);
 });
+
+test('scroll must be an integer within the stated limit', () => {
+  assert.doesNotThrow(() => parseScenariosJson(one({ steps: [{ scroll: -100000 }] }), VPS));
+  for (const scroll of [1.5, 100001, '10']) {
+    assert.throws(() => parseScenariosJson(one({ steps: [{ scroll }] }), VPS),
+      (e) => e.details.some((d) => d.includes('scroll must be an integer from -100000 to 100000 (pixels)')));
+  }
+});

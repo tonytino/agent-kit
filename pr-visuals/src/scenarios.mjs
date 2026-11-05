@@ -232,7 +232,7 @@ function checkStep(step) {
       if (!Number.isInteger(value) || value < 0 || value > LIMITS.waitMs) return `wait must be an integer from 0 to ${LIMITS.waitMs} (ms).`;
       return null;
     case 'scroll':
-      if (!Number.isInteger(value) || Math.abs(value) > LIMITS.scrollPx) return `scroll must be an integer number of pixels.`;
+      if (!Number.isInteger(value) || Math.abs(value) > LIMITS.scrollPx) return `scroll must be an integer from -${LIMITS.scrollPx} to ${LIMITS.scrollPx} (pixels).`;
       return null;
     default:
       return 'is not supported.';

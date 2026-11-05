@@ -2,10 +2,11 @@ import { UserError } from './errors.mjs';
 
 /**
  * @typedef {(method: string, path: string, opts?: { query?: Record<string, string | number | undefined>, body?: unknown, allow404?: boolean }) => Promise<any>} Request
- * @typedef {{ request: Request }} GitHub
+ * @typedef {{ request: Request, paginate: (path: string, query?: Record<string, string | number | undefined>, maxPages?: number) => Promise<any[]> }} GitHub
  */
 
 const MAX_RETRIES = 3;
+const IDEMPOTENT = new Set(['GET', 'HEAD', 'PUT', 'PATCH', 'DELETE']);
 
 /** @param {number} ms */
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -22,6 +23,9 @@ export function createGitHub({ token, apiUrl = 'https://api.github.com', fetchIm
 
   /** @type {Request} */
   async function request(method, path, { query, body, allow404 = false } = {}) {
+    // A POST that failed with 5xx or a dropped connection may have been applied. Retrying it
+    // could post a duplicate comment, so POST retries only on rate limit rejections.
+    const idempotent = IDEMPOTENT.has(method);
     const url = new URL(root + path);
     for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined) url.searchParams.set(k, String(v));
     for (let attempt = 0; ; attempt++) {
@@ -40,7 +44,7 @@ export function createGitHub({ token, apiUrl = 'https://api.github.com', fetchIm
           body: body === undefined ? undefined : JSON.stringify(body),
         });
       } catch (err) {
-        if (attempt < MAX_RETRIES) {
+        if (idempotent && attempt < MAX_RETRIES) {
           await sleepImpl(1000 * 2 ** attempt);
           continue;
         }
@@ -57,7 +61,7 @@ export function createGitHub({ token, apiUrl = 'https://api.github.com', fetchIm
       const rateLimited =
         res.status === 429 ||
         (res.status === 403 && (res.headers.get('x-ratelimit-remaining') === '0' || /rate limit/i.test(apiMessage)));
-      if ((res.status >= 500 || rateLimited) && attempt < MAX_RETRIES) {
+      if (((idempotent && res.status >= 500) || rateLimited) && attempt < MAX_RETRIES) {
         const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 60) * 1000 : 1000 * 2 ** (attempt + 1);
         await sleepImpl(wait);
         continue;
@@ -72,7 +76,23 @@ export function createGitHub({ token, apiUrl = 'https://api.github.com', fetchIm
       throw new UserError(`${where}: ${apiMessage}`);
     }
   }
-  return { request };
+  /**
+   * Fetches every page of a list endpoint.
+   * @param {string} path
+   * @param {Record<string, string | number | undefined>} [query]
+   * @param {number} [maxPages]
+   * @returns {Promise<any[]>}
+   */
+  async function paginate(path, query = {}, maxPages = 50) {
+    const out = [];
+    for (let page = 1; page <= maxPages; page++) {
+      const items = (await request('GET', path, { query: { ...query, per_page: 100, page } })) ?? [];
+      out.push(...items);
+      if (items.length < 100) break;
+    }
+    return out;
+  }
+  return { request, paginate };
 }
 
 /** @param {string} text */

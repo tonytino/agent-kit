@@ -30,3 +30,34 @@ test('allow404 returns null', async () => {
   const gh = createGitHub({ token: 't', fetchImpl: seq([json(404, {})]).fetchImpl });
   assert.equal(await gh.request('DELETE', '/z', { allow404: true }), null);
 });
+
+test('POST is not retried on 5xx or network errors', async () => {
+  const { calls, fetchImpl } = seq([json(502, {}), json(201, { id: 1 })]);
+  const gh = createGitHub({ token: 't', fetchImpl, sleepImpl: async () => {} });
+  await assert.rejects(gh.request('POST', '/c', { body: {} }), /returned 502/);
+  assert.equal(calls.length, 1);
+  let n = 0;
+  const failing = createGitHub({ token: 't', fetchImpl: async () => { n++; throw new Error('reset'); }, sleepImpl: async () => {} });
+  await assert.rejects(failing.request('POST', '/c', { body: {} }), /reset/);
+  assert.equal(n, 1);
+});
+
+test('POST is retried on rate limits', async () => {
+  const { calls, fetchImpl } = seq([json(429, {}, { 'retry-after': '2' }), json(201, { id: 1 })]);
+  const gh = createGitHub({ token: 't', fetchImpl, sleepImpl: async () => {} });
+  assert.deepEqual(await gh.request('POST', '/c', { body: {} }), { id: 1 });
+  assert.equal(calls.length, 2);
+});
+
+test('paginate follows pages until a short page', async () => {
+  const pages = [Array.from({ length: 100 }, (_, i) => i), [100, 101]];
+  const seen = [];
+  const gh = createGitHub({ token: 't', fetchImpl: async (url) => {
+    const page = Number(new URL(url).searchParams.get('page'));
+    seen.push(page);
+    return new Response(JSON.stringify(pages[page - 1] ?? []), { status: 200 });
+  } });
+  const all = await gh.paginate('/items');
+  assert.equal(all.length, 102);
+  assert.deepEqual(seen, [1, 2]);
+});

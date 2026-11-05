@@ -43,3 +43,29 @@ test('repoFromRemote parses GitHub remotes', () => {
   assert.deepEqual(repoFromRemote('https://github.com/tonytino/agent-kit'), { owner: 'tonytino', repo: 'agent-kit' });
   assert.throws(() => repoFromRemote('https://gitlab.com/a/b'), /Pass --repo/);
 });
+
+test('each command has its own --help', () => {
+  for (const cmd of ['check', 'generate', 'still-valid', 'capture', 'render', 'publish']) {
+    const out = execFileSync(process.execPath, [bin, cmd, '--help'], { encoding: 'utf8' });
+    assert.match(out, new RegExp(`^Usage: pr-visuals ${cmd}`), cmd);
+  }
+});
+
+test('bad options give a clear error and the command usage', () => {
+  const r = spawnSync(process.execPath, [bin, 'render', '--nope'], { encoding: 'utf8' });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /Unknown option '--nope'/);
+  assert.match(r.stderr, /Usage: pr-visuals render/);
+  assert.doesNotMatch(r.stderr, /at parseArgs|node:internal/);
+});
+
+test('capture refuses a symlinked scenarios file', async () => {
+  const { symlink } = await import('node:fs/promises');
+  const real = path.join(tmp, 'sc.json');
+  await writeFile(real, '{"scenarios":[{"name":"a","path":"/"}]}');
+  await symlink(real, path.join(tmp, 'sc-link.json'));
+  const r = spawnSync(process.execPath, [bin, 'capture', '--before-url', 'http://127.0.0.1:1', '--after-url', 'http://127.0.0.1:1',
+    '--scenarios', path.join(tmp, 'sc-link.json'), '--out', path.join(tmp, 'o')], { encoding: 'utf8' });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /is a symlink/);
+});

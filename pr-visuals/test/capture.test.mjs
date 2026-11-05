@@ -79,3 +79,58 @@ test('captures before and after screenshots and videos with Chromium', async (t)
     afterSrv.close();
   }
 });
+
+test('records HTTP errors and blocks navigation to another origin', async (t) => {
+  try {
+    await (await launchChromium()).close();
+  } catch (err) {
+    t.skip(`Chromium cannot launch: ${String(err).split('\n')[0]}`);
+    return;
+  }
+  const otherSeen = [];
+  const other = await serve('Other', otherSeen);
+  const otherUrl = `http://127.0.0.1:${other.address().port}/landing`;
+  const site = http.createServer((req, res) => {
+    if (req.url.startsWith('/private')) {
+      res.writeHead(401, { 'content-type': 'text/html' });
+      res.end('<h1>Sign in</h1>');
+      return;
+    }
+    if (req.url.startsWith('/redirect')) {
+      res.writeHead(302, { location: otherUrl });
+      res.end();
+      return;
+    }
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(`<h1>Home</h1><a id="out" href="${otherUrl}">Out</a><a id="priv" href="/private">Private</a>`);
+  });
+  await new Promise((r) => site.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${site.address().port}`;
+  try {
+    const out = path.join(tmp, 'errors');
+    const { manifest, failed, total } = await capture({
+      beforeUrl: base, afterUrl: base,
+      scenarios: [
+        { name: 'Private', path: '/private', viewports: ['desktop'], video: false, steps: [] },
+        { name: 'Leave', path: '/', viewports: ['desktop'], video: false, steps: [{ click: '#out' }] },
+        { name: 'Click private', path: '/', viewports: ['desktop'], video: false, steps: [{ click: '#priv' }] },
+        { name: 'Redirect', path: '/redirect', viewports: ['desktop'], video: false, steps: [] },
+        { name: 'Ok', path: '/', viewports: ['desktop'], video: false, steps: [] },
+      ],
+      viewports: { desktop: { width: 800, height: 600 } },
+      outDir: out,
+    });
+    assert.equal(total, 10);
+    assert.equal(failed, 8);
+    const err = (i) => manifest.scenarios[i].cells[0].before.error;
+    assert.equal(err(0), 'HTTP 401 at /private');
+    assert.match(err(1), /^step click: navigation to another origin blocked: http:\/\/127\.0\.0\.1:\d+$/);
+    assert.equal(err(2), 'step click: HTTP 401 at /private');
+    assert.match(err(3), /^navigation to another origin blocked: http:\/\/127\.0\.0\.1:\d+$/);
+    assert.ok(manifest.scenarios[4].cells[0].before.screenshot);
+    assert.equal(otherSeen.filter((r) => r.url === '/landing').length, 0, 'the other origin received no navigation');
+  } finally {
+    site.close();
+    other.close();
+  }
+});

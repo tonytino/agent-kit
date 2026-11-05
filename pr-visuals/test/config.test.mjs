@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DEFAULT_VIEWPORTS, parseConfig, templateUrl, validateConfig } from '../src/config.mjs';
+import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { DEFAULT_VIEWPORTS, loadConfig, parseConfig, templateUrl, validateConfig } from '../src/config.mjs';
 
 const SHA = '0123456789abcdef0123456789abcdef01234567';
 
@@ -50,6 +53,33 @@ test('rejects invalid configs with clear errors', () => {
   }
   assert.throws(() => parseConfig('{'), /not valid JSON/);
   assert.throws(() => validateConfig([]), /JSON object/);
+});
+
+test('timeoutMinutes must be at least 1', () => {
+  const base = { before: { url: 'https://a' } };
+  assert.throws(() => validateConfig({ ...base, after: { source: 'github-deployment', timeoutMinutes: 0.5 } }), /Invalid/);
+  assert.equal(validateConfig({ ...base, after: { source: 'github-deployment', timeoutMinutes: 1 } }).after.timeoutMinutes, 1);
+});
+
+test('headers with a deployment source require an environment', () => {
+  const cfg = { before: { url: 'https://a' }, after: { source: 'github-deployment' } };
+  assert.throws(() => validateConfig(cfg, { hasHeaders: true }), (e) => e.details.some((d) => /after.environment is required/.test(d)));
+  assert.doesNotThrow(() => validateConfig(cfg));
+  assert.doesNotThrow(() => validateConfig({ ...cfg, after: { ...cfg.after, environment: 'Preview' } }, { hasHeaders: true }));
+});
+
+test('loadConfig refuses symlinks', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'pr-visuals-cfg-'));
+  try {
+    const real = path.join(dir, 'real.json');
+    await writeFile(real, JSON.stringify({ before: { url: 'https://a' }, after: { url: 'https://b' } }));
+    await symlink(real, path.join(dir, 'link.json'));
+    assert.equal((await loadConfig(real)).before.url, 'https://a');
+    await assert.rejects(loadConfig(path.join(dir, 'link.json')), /is a symlink/);
+    await assert.rejects(loadConfig(dir), /not a regular file|Cannot read/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 test('templates {number} and {sha}', () => {

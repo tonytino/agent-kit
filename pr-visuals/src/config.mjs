@@ -1,4 +1,5 @@
-import { readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { open } from 'node:fs/promises';
 import { UserError } from './errors.mjs';
 import { isPlainObject } from './scenarios.mjs';
 
@@ -19,24 +20,42 @@ const VIEWPORT_KEYS = new Set(['width', 'height', 'isMobile', 'hasTouch', 'devic
 const PLACEHOLDER_RE = /\{([^{}]*)\}/g;
 
 /**
- * Reads and validates a config file.
+ * Reads and validates a local config file. Symlinks are refused.
  * @param {string} file
- * @param {{ requireSources?: boolean }} [opts]
+ * @param {{ requireSources?: boolean, hasHeaders?: boolean }} [opts]
  * @returns {Promise<Config>}
  */
 export async function loadConfig(file, opts) {
-  let text;
+  return parseConfig(await readRegularFile(file, 'config'), opts);
+}
+
+/**
+ * Reads a file as UTF-8 and refuses symlinks and non-regular files.
+ * @param {string} file
+ * @param {string} what used in error messages
+ * @returns {Promise<string>}
+ */
+export async function readRegularFile(file, what) {
+  let handle;
   try {
-    text = await readFile(file, 'utf8');
+    // O_NOFOLLOW makes the open fail on a symlink, with no gap between check and read.
+    handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+    const st = await handle.stat();
+    if (!st.isFile()) throw new UserError(`The ${what} ${file} is not a regular file.`);
+    return await handle.readFile('utf8');
   } catch (err) {
-    throw new UserError(`Cannot read config ${file}: ${/** @type {NodeJS.ErrnoException} */ (err).code ?? err}`);
+    if (err instanceof UserError) throw err;
+    const code = /** @type {NodeJS.ErrnoException} */ (err).code;
+    if (code === 'ELOOP') throw new UserError(`The ${what} ${file} is a symlink. Pass the real file.`);
+    throw new UserError(`Cannot read the ${what} ${file}: ${code ?? err}`);
+  } finally {
+    await handle?.close();
   }
-  return parseConfig(text, opts);
 }
 
 /**
  * @param {string} text
- * @param {{ requireSources?: boolean }} [opts]
+ * @param {{ requireSources?: boolean, hasHeaders?: boolean }} [opts]
  * @returns {Config}
  */
 export function parseConfig(text, opts) {
@@ -52,10 +71,12 @@ export function parseConfig(text, opts) {
 /**
  * Validates a config object. With requireSources (the default), `before` and `after` are required.
  * @param {unknown} data
- * @param {{ requireSources?: boolean }} [opts]
+ * With hasHeaders, a github-deployment source must name an environment. Otherwise any deployment
+ * for the commit (from any integration) could receive the secret headers.
+ * @param {{ requireSources?: boolean, hasHeaders?: boolean }} [opts]
  * @returns {Config}
  */
-export function validateConfig(data, { requireSources = true } = {}) {
+export function validateConfig(data, { requireSources = true, hasHeaders = false } = {}) {
   /** @type {string[]} */
   const errors = [];
   if (!isPlainObject(data)) throw new UserError('Config must be a JSON object.');
@@ -93,7 +114,10 @@ export function validateConfig(data, { requireSources = true } = {}) {
         errors.push('after.environment must be a non-empty string.');
       }
       const t = a.timeoutMinutes ?? 15;
-      if (typeof t !== 'number' || !Number.isFinite(t) || t <= 0 || t > 120) errors.push('after.timeoutMinutes must be a number from 1 to 120.');
+      if (typeof t !== 'number' || !Number.isFinite(t) || t < 1 || t > 120) errors.push('after.timeoutMinutes must be a number from 1 to 120.');
+      if (hasHeaders && a.environment === undefined) {
+        errors.push('after.environment is required when PR_VISUALS_HEADERS is set, so the headers go only to that environment.');
+      }
       config.after = { source: 'github-deployment', environment: a.environment, timeoutMinutes: t };
     } else {
       errors.push('"after" must be { "url": "..." } or { "source": "github-deployment", ... }.');
