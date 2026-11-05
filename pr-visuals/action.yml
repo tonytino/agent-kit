@@ -64,4 +64,4 @@ runs:
         MODE: ${{ inputs.mode }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PR_VISUALS_CONFIG: ${{ inputs.config }}
-      run: node "$GITHUB_ACTION_PATH/bin/pr-visuals.mjs" "$MODE"
+      run: node "$GITHUB_ACTION_PATH/cli/pr-visuals.mjs" "$MODE"

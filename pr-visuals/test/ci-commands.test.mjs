@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { after, test } from 'node:test';
 import { launchChromium } from '../src/capture.mjs';
 
-const bin = fileURLToPath(new URL('../bin/pr-visuals.mjs', import.meta.url));
+const bin = fileURLToPath(new URL('../cli/pr-visuals.mjs', import.meta.url));
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'pr-visuals-ci-test-'));
 after(() => rm(tmp, { recursive: true, force: true }));
 const HEAD = '1'.repeat(40);
