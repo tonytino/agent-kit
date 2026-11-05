@@ -16,7 +16,7 @@ Commands below use the GitHub CLI (`gh`). You can use your GitHub tool for the s
 The repository uses pr-visuals if one of these is true:
 
 - `.github/pr-visuals.json` exists.
-- A workflow in `.github/workflows/` uses `tonytino/agent-kit/pr-visuals`.
+- A workflow in `.github/workflows/` uses `tonytino/agent-sdk/pr-visuals`.
 
 If the repository does not use pr-visuals:
 
@@ -82,10 +82,10 @@ You need push access to the repository.
 
 1. Install the CLI once. Clone outside the working repository:
    ```sh
-   git clone --depth 1 --branch pr-visuals-v0.1.0 https://github.com/tonytino/agent-kit "$HOME/.cache/agent-kit"
-   (cd "$HOME/.cache/agent-kit/pr-visuals" && npm ci && npx playwright install chromium)
+   git clone --depth 1 --branch pr-visuals-v0.1.0 https://github.com/tonytino/agent-sdk "$HOME/.cache/agent-sdk"
+   (cd "$HOME/.cache/agent-sdk/pr-visuals" && npm ci && npx playwright install chromium)
    ```
-   The CLI is not on your PATH. Run it as `node "$HOME/.cache/agent-kit/pr-visuals/cli/pr-visuals.mjs"`. Below, `pr-visuals` means this command.
+   The CLI is not on your PATH. Run it as `node "$HOME/.cache/agent-sdk/pr-visuals/cli/pr-visuals.mjs"`. Below, `pr-visuals` means this command.
 2. Push your commits. Get the head SHA:
    ```sh
    gh pr view <number> --json headRefOid -q .headRefOid

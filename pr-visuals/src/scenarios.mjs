@@ -1,7 +1,7 @@
 import { UserError } from './errors.mjs';
 
 export const SCENARIOS_DOC_URL =
-  'https://github.com/tonytino/agent-kit/blob/main/pr-visuals/skills/pr-visuals/references/scenarios.md';
+  'https://github.com/tonytino/agent-sdk/blob/main/pr-visuals/skills/pr-visuals/references/scenarios.md';
 
 export const LIMITS = Object.freeze({
   scenarios: 10,

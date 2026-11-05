@@ -1,7 +1,7 @@
 # Copy to .github/workflows/pr-visuals.yml.
 #
 # Edit before use: replace REPLACE_WITH_FULL_COMMIT_SHA with the full commit SHA of the
-# pr-visuals-vX.Y.Z tag of tonytino/agent-kit. The workflow fails until you do.
+# pr-visuals-vX.Y.Z tag of tonytino/agent-sdk. The workflow fails until you do.
 #
 # Make "pr-visuals-check" a required status check.
 #
@@ -41,7 +41,7 @@ jobs:
       # Example secret value: {"x-vercel-protection-bypass":"...","x-vercel-set-bypass-cookie":"true"}
       PR_VISUALS_HEADERS: ${{ secrets.PR_VISUALS_HEADERS }}
     steps:
-      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
+      - uses: tonytino/agent-sdk/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
         with:
           mode: generate
 
@@ -56,7 +56,7 @@ jobs:
       pull-requests: write
       issues: write
     steps:
-      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
+      - uses: tonytino/agent-sdk/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
         with:
           mode: still-valid
 
@@ -73,6 +73,6 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
+      - uses: tonytino/agent-sdk/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
         with:
           mode: check

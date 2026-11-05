@@ -7,7 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each tool has 
 ## Repository - 2026-11-05
 
 ### Changed
-- The repository and marketplace name is `agent-kit`. Run `/plugin marketplace add tonytino/agent-kit`, then reinstall each plugin with `@agent-kit`, for example `/plugin install block-self-bind-schedule@agent-kit`. Old repository URLs redirect.
+- The repository and marketplace name is `agent-sdk`. Run `/plugin marketplace add tonytino/agent-sdk`, then reinstall each plugin with `@agent-sdk`, for example `/plugin install block-self-bind-schedule@agent-sdk`. Old repository URLs redirect.
 - CI pins GitHub Actions to full commit SHAs.
 
 ### Added
@@ -40,7 +40,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each tool has 
 ### Added
 - `block-self-bind-schedule` plugin. Denies `send_later` and self-bind `create_trigger`.
 
-[Unreleased]: https://github.com/tonytino/agent-kit/commits/main
-[pr-visuals 0.1.0]: https://github.com/tonytino/agent-kit/releases/tag/pr-visuals-v0.1.0
-[block-self-bind-schedule 0.2.0]: https://github.com/tonytino/agent-kit/compare/v0.1.0...v0.2.0
-[block-self-bind-schedule 0.1.0]: https://github.com/tonytino/agent-kit/releases/tag/v0.1.0
+[Unreleased]: https://github.com/tonytino/agent-sdk/commits/main
+[pr-visuals 0.1.0]: https://github.com/tonytino/agent-sdk/releases/tag/pr-visuals-v0.1.0
+[block-self-bind-schedule 0.2.0]: https://github.com/tonytino/agent-sdk/compare/v0.1.0...v0.2.0
+[block-self-bind-schedule 0.1.0]: https://github.com/tonytino/agent-sdk/releases/tag/v0.1.0
