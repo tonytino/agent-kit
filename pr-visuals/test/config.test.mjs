@@ -24,9 +24,19 @@ test('applies defaults', () => {
   const c = validateConfig({ before: { url: 'https://a.example' }, after: { url: 'https://pr-{number}.example.com' } });
   assert.deepEqual(c.viewports, DEFAULT_VIEWPORTS);
   assert.equal(c.fullPage, true);
+  assert.equal(c.darkMode, false);
   const d = validateConfig({ before: { url: 'https://a.example' }, after: { source: 'github-deployment' } });
   assert.equal(d.after.timeoutMinutes, 15);
   assert.equal(d.after.environment, undefined);
+});
+
+test('darkMode accepts true or false and rejects other values', () => {
+  const base = { before: { url: 'https://a' }, after: { url: 'https://b' } };
+  assert.equal(validateConfig({ ...base, darkMode: true }).darkMode, true);
+  assert.equal(validateConfig({ ...base, darkMode: false }).darkMode, false);
+  for (const bad of ['true', 1, null, {}]) {
+    assert.throws(() => validateConfig({ ...base, darkMode: bad }), (e) => e.details.includes('"darkMode" must be true or false.'), String(bad));
+  }
 });
 
 test('local mode does not require sources', () => {

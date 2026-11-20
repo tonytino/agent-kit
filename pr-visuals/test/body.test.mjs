@@ -29,6 +29,31 @@ test('renders the block with meta, table, image URLs, and videos', () => {
   assert.deepEqual(parseMeta(b), { version: 1, sha: A, confirmed: [] });
 });
 
+test('without darkMode the table has no dark column', () => {
+  const b = block();
+  assert.ok(!b.includes('After (dark)'));
+  assert.ok(!b.includes('after (dark)'));
+  assert.match(b, /^\| --- \| --- \| --- \|$/m);
+});
+
+test('with darkMode renders an After (dark) column and video link', () => {
+  const m = { version: 1, darkMode: true, scenarios: [{ name: 'X <i>', slug: 'x', video: true, cells: [
+    { viewport: 'desktop', before: { screenshot: 'x/desktop-before.png' }, after: { screenshot: 'x/desktop-after.png', video: 'x/desktop-after.webm' },
+      afterDark: { screenshot: 'x/desktop-after-dark.png', video: 'x/desktop-after-dark.webm' } },
+    { viewport: 'mobile', before: { screenshot: 'x/mobile-before.png' }, after: { screenshot: 'x/mobile-after.png' }, afterDark: { error: 'HTTP 500 at /x <b>' } },
+    { viewport: 'tablet', before: { screenshot: 'x/tablet-before.png' }, after: { screenshot: 'x/tablet-after.png' } },
+  ] }] };
+  const b = renderBlock({ manifest: m, owner: 'o', repo: 'r', basePath: 'p', sha: A });
+  assert.match(b, /^\| Viewport \| Before \| After \| After \(dark\) \|\n\| --- \| --- \| --- \| --- \|$/m);
+  assert.ok(b.includes('src="https://github.com/o/r/blob/pr-visuals/p/x/desktop-after-dark.png?raw=true" alt="X &lt;i&gt; desktop after (dark)"'), b);
+  assert.ok(b.includes('| capture failed: HTTP 500 at /x &lt;b&gt; |'), b);
+  assert.match(b, /\| tablet \| <img [^|]+ \| <img [^|]+ \| capture failed: no screenshot \|/);
+  assert.ok(b.includes(' · [after (dark)](https://github.com/o/r/blob/pr-visuals/p/x/desktop-after-dark.webm?raw=true)  '), b);
+  assert.ok(b.includes('Video (mobile): before: none · after: none · after (dark): none  '), b);
+  const bad = { ...m, scenarios: [{ ...m.scenarios[0], cells: [{ ...m.scenarios[0].cells[0], afterDark: { screenshot: '../x.png' } }] }] };
+  assert.throws(() => renderBlock({ manifest: bad, owner: 'o', repo: 'r', basePath: 'p', sha: A }), /Invalid file path/);
+});
+
 test('an after-side failure renders as capture failed', () => {
   const m = { version: 1, scenarios: [{ name: 'X', slug: 'x', video: false,
     cells: [{ viewport: 'desktop', before: { screenshot: 'x/desktop-before.png' }, after: { error: 'HTTP 500 at /x <b>' } }] }] };

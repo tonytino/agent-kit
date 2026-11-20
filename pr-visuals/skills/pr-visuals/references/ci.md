@@ -47,7 +47,8 @@ Copy [`examples/pr-visuals.json`](https://github.com/tonytino/agent-kit/blob/mai
     "desktop": { "width": 1280, "height": 800 },
     "mobile": { "width": 390, "height": 844, "isMobile": true, "hasTouch": true, "deviceScaleFactor": 3 }
   },
-  "fullPage": true
+  "fullPage": true,
+  "darkMode": false
 }
 ```
 
@@ -59,6 +60,7 @@ Copy [`examples/pr-visuals.json`](https://github.com/tonytino/agent-kit/blob/mai
 | `after.timeoutMinutes` | No | Minutes to wait for a successful deployment, 1 to 120. Default: 15. |
 | `viewports` | No | 1 to 10 named viewports. Scenarios pick from these names. Default: `desktop` (1280x800) and `mobile` (390x844). |
 | `fullPage` | No | `false` captures only the viewport. Default: `true`. |
+| `darkMode` | No | `true` adds an After (dark) column. It captures the after URL again with `prefers-color-scheme: dark` emulated. Before and after cells use `light`. An after (dark) failure fails the check like an after failure. Apps that pick the theme only from a stored user preference or a class toggle do not switch. Default: `false`. |
 
 Viewport rules:
 

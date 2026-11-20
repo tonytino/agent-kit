@@ -7,7 +7,7 @@ import { isPlainObject } from './scenarios.mjs';
  * @typedef {{ width: number, height: number, isMobile?: boolean, hasTouch?: boolean, deviceScaleFactor?: number }} Viewport
  * @typedef {{ url: string }} UrlSource
  * @typedef {{ source: 'github-deployment', environment?: string, timeoutMinutes: number }} DeploymentSource
- * @typedef {{ before?: UrlSource, after?: UrlSource | DeploymentSource, viewports: Record<string, Viewport>, fullPage: boolean }} Config
+ * @typedef {{ before?: UrlSource, after?: UrlSource | DeploymentSource, viewports: Record<string, Viewport>, fullPage: boolean, darkMode: boolean }} Config
  */
 
 export const DEFAULT_VIEWPORTS = Object.freeze({
@@ -15,7 +15,7 @@ export const DEFAULT_VIEWPORTS = Object.freeze({
   mobile: { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 3 },
 });
 
-const TOP_KEYS = new Set(['before', 'after', 'viewports', 'fullPage']);
+const TOP_KEYS = new Set(['before', 'after', 'viewports', 'fullPage', 'darkMode']);
 const VIEWPORT_KEYS = new Set(['width', 'height', 'isMobile', 'hasTouch', 'deviceScaleFactor']);
 const PLACEHOLDER_RE = /\{([^{}]*)\}/g;
 
@@ -83,7 +83,7 @@ export function validateConfig(data, { requireSources = true, hasHeaders = false
   for (const key of Object.keys(data)) if (!TOP_KEYS.has(key)) errors.push(`Unknown key "${key}".`);
 
   /** @type {Config} */
-  const config = { viewports: { ...DEFAULT_VIEWPORTS }, fullPage: true };
+  const config = { viewports: { ...DEFAULT_VIEWPORTS }, fullPage: true, darkMode: false };
 
   if (data.before !== undefined) {
     if (!isPlainObject(data.before) || Object.keys(data.before).some((k) => k !== 'url')) {
@@ -160,6 +160,11 @@ export function validateConfig(data, { requireSources = true, hasHeaders = false
   if (data.fullPage !== undefined) {
     if (typeof data.fullPage !== 'boolean') errors.push('"fullPage" must be true or false.');
     else config.fullPage = data.fullPage;
+  }
+
+  if (data.darkMode !== undefined) {
+    if (typeof data.darkMode !== 'boolean') errors.push('"darkMode" must be true or false.');
+    else config.darkMode = data.darkMode;
   }
 
   if (errors.length) throw new UserError('Invalid pr-visuals config.', { details: errors });

@@ -40,21 +40,32 @@ export async function launchChromium() {
 
 /**
  * Captures before and after screenshots (and optional videos) for every scenario and viewport.
+ * With darkMode, each viewport also gets an after-dark cell: the after URL with
+ * prefers-color-scheme: dark. Before and after cells use the light color scheme.
  * A failing cell records its error and does not stop other cells.
- * `total` and `failed` count after-side cells only. A before-side failure is expected when the PR
- * adds a page or UI, so it is reported in `beforeFailed` and does not fail the gate.
+ * `total` and `failed` count after-side cells only (after and after-dark). A before-side failure is
+ * expected when the PR adds a page or UI, so it is reported in `beforeFailed` and does not fail the gate.
  * @param {{
  *   beforeUrl: string, afterUrl: string, scenarios: Scenario[], viewports: Record<string, Viewport>,
- *   outDir: string, headers?: Record<string, string>, fullPage?: boolean, log?: (msg: string) => void
+ *   outDir: string, headers?: Record<string, string>, fullPage?: boolean, darkMode?: boolean,
+ *   log?: (msg: string) => void
  * }} opts
  * @returns {Promise<{ manifest: Manifest, total: number, failed: number, beforeFailed: number }>}
  */
-export async function capture({ beforeUrl, afterUrl, scenarios, viewports, outDir, headers = {}, fullPage = true, log = () => {} }) {
-  const bases = { before: new URL(beforeUrl).href, after: new URL(afterUrl).href };
+export async function capture({
+  beforeUrl, afterUrl, scenarios, viewports, outDir, headers = {}, fullPage = true, darkMode = false, log = () => {},
+}) {
+  const afterBase = new URL(afterUrl).href;
+  /** @type {{ side: 'before' | 'after' | 'after-dark', key: 'before' | 'after' | 'afterDark', base: string, colorScheme: 'light' | 'dark' }[]} */
+  const kinds = [
+    { side: 'before', key: 'before', base: new URL(beforeUrl).href, colorScheme: 'light' },
+    { side: 'after', key: 'after', base: afterBase, colorScheme: 'light' },
+  ];
+  if (darkMode) kinds.push({ side: 'after-dark', key: 'afterDark', base: afterBase, colorScheme: 'dark' });
   await mkdir(outDir, { recursive: true });
   const browser = await launchChromium();
   /** @type {Manifest} */
-  const manifest = { version: 1, scenarios: [] };
+  const manifest = { version: 1, darkMode, scenarios: [] };
   let total = 0;
   let failed = 0;
   let beforeFailed = 0;
@@ -68,19 +79,23 @@ export async function capture({ beforeUrl, afterUrl, scenarios, viewports, outDi
       for (const vpName of sc.viewports) {
         const vp = viewports[vpName];
         if (!vp) throw new UserError(`Scenario "${sc.name}" uses unknown viewport "${vpName}".`);
-        /** @type {Record<'before' | 'after', Side>} */
-        const sides = { before: {}, after: {} };
-        for (const side of /** @type {const} */ (['before', 'after'])) {
-          if (side === 'after') total++;
+        /** @type {import('./body.mjs').Cell} */
+        const cell = { viewport: vpName, before: {}, after: {} };
+        for (const { side, key, base, colorScheme } of kinds) {
+          const isAfter = side !== 'before';
+          if (isAfter) total++;
           log(`Capturing "${sc.name}" ${vpName} ${side}`);
-          sides[side] = await captureCell({ browser, base: bases[side], scenario: sc, viewport: vp, outDir, file: `${slug}/${vpName}-${side}`, headers, fullPage });
-          if (sides[side].error) {
-            if (side === 'after') failed++;
+          const result = await captureCell({
+            browser, base, scenario: sc, viewport: vp, outDir, file: `${slug}/${vpName}-${side}`, headers, fullPage, colorScheme,
+          });
+          cell[key] = result;
+          if (result.error) {
+            if (isAfter) failed++;
             else beforeFailed++;
-            log(`  failed: ${sides[side].error}`);
+            log(`  failed: ${result.error}`);
           }
         }
-        entry.cells.push({ viewport: vpName, before: sides.before, after: sides.after });
+        entry.cells.push(cell);
       }
       manifest.scenarios.push(entry);
     }
@@ -95,11 +110,11 @@ export async function capture({ beforeUrl, afterUrl, scenarios, viewports, outDi
 /**
  * @param {{
  *   browser: import('playwright').Browser, base: string, scenario: Scenario, viewport: Viewport,
- *   outDir: string, file: string, headers: Record<string, string>, fullPage: boolean
+ *   outDir: string, file: string, headers: Record<string, string>, fullPage: boolean, colorScheme: 'light' | 'dark'
  * }} opts
  * @returns {Promise<Side>}
  */
-async function captureCell({ browser, base, scenario, viewport, outDir, file, headers, fullPage }) {
+async function captureCell({ browser, base, scenario, viewport, outDir, file, headers, fullPage, colorScheme }) {
   const videoDir = scenario.video ? path.join(outDir, '.video-tmp') : undefined;
   const size = { width: viewport.width, height: viewport.height };
   const context = await browser.newContext({
@@ -108,6 +123,7 @@ async function captureCell({ browser, base, scenario, viewport, outDir, file, he
     hasTouch: viewport.hasTouch ?? false,
     deviceScaleFactor: viewport.deviceScaleFactor ?? 1,
     reducedMotion: 'reduce',
+    colorScheme,
     // Service workers bypass context.route, so header scoping and routing would be incomplete.
     serviceWorkers: 'block',
     recordVideo: videoDir ? { dir: videoDir, size } : undefined,

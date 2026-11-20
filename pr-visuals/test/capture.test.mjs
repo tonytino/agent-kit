@@ -136,3 +136,128 @@ test('records HTTP errors and blocks navigation to another origin', async (t) =>
     other.close();
   }
 });
+
+// Light: white background. Dark: black background. A dark-mode visit to /fail-dark leaves the origin.
+const themed = `<!doctype html><html><head><style>
+html, body { margin: 0; background: rgb(255, 255, 255); }
+@media (prefers-color-scheme: dark) { html, body { background: rgb(0, 0, 0); } }
+</style><script>
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+fetch('/beacon?dark=' + dark);
+if (dark && location.pathname === '/fail-dark') location.replace('http://pr-visuals.invalid/');
+</script></head><body><h1>Themed</h1></body></html>`;
+
+/**
+ * Reads the top-left pixel of a PNG file with Chromium.
+ * @param {import('playwright').Browser} browser
+ * @param {string} file
+ */
+async function cornerPixel(browser, file) {
+  const { readFile } = await import('node:fs/promises');
+  const data = (await readFile(file)).toString('base64');
+  const p = await browser.newPage();
+  try {
+    return await p.evaluate(async (src) => {
+      const img = new Image();
+      img.src = src;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      return Array.from(ctx.getImageData(5, 5, 1, 1).data.slice(0, 3));
+    }, `data:image/png;base64,${data}`);
+  } finally {
+    await p.close();
+  }
+}
+
+test('darkMode captures an after-dark cell with the dark color scheme', async (t) => {
+  let browser;
+  try {
+    browser = await launchChromium();
+  } catch (err) {
+    t.skip(`Chromium cannot launch: ${String(err).split('\n')[0]}`);
+    return;
+  }
+  /** @param {string} label */
+  const site = (label, beacons) => http.createServer((req, res) => {
+    if (req.url.startsWith('/beacon')) {
+      beacons.push(new URL(req.url, 'http://x').searchParams.get('dark'));
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(themed.replace('Themed', label));
+  });
+  const beforeBeacons = [];
+  const afterBeacons = [];
+  const before = site('Before', beforeBeacons);
+  const afterSrv = site('After', afterBeacons);
+  await Promise.all([before, afterSrv].map((s) => new Promise((r) => s.listen(0, '127.0.0.1', r))));
+  try {
+    const out = path.join(tmp, 'dark');
+    const { manifest, total, failed, beforeFailed } = await capture({
+      beforeUrl: `http://127.0.0.1:${before.address().port}`,
+      afterUrl: `http://127.0.0.1:${afterSrv.address().port}`,
+      scenarios: [
+        { name: 'Home', path: '/', viewports: ['desktop'], video: true, steps: [] },
+        { name: 'Fail dark', path: '/fail-dark', viewports: ['desktop'], video: false, steps: [] },
+      ],
+      viewports: { desktop: { width: 400, height: 300 } },
+      outDir: out,
+      darkMode: true,
+    });
+    assert.equal(manifest.darkMode, true);
+    // after and after-dark cells count. The after-dark failure counts as failed.
+    assert.equal(total, 4);
+    assert.equal(failed, 1);
+    assert.equal(beforeFailed, 0);
+    const cell = manifest.scenarios[0].cells[0];
+    assert.equal(cell.afterDark.screenshot, 'home/desktop-after-dark.png');
+    assert.equal(cell.afterDark.video, 'home/desktop-after-dark.webm');
+    assert.ok((await stat(path.join(out, cell.afterDark.video))).size > 0);
+    assert.deepEqual(await cornerPixel(browser, path.join(out, cell.before.screenshot)), [255, 255, 255]);
+    assert.deepEqual(await cornerPixel(browser, path.join(out, cell.after.screenshot)), [255, 255, 255]);
+    assert.deepEqual(await cornerPixel(browser, path.join(out, cell.afterDark.screenshot)), [0, 0, 0]);
+    const failCell = manifest.scenarios[1].cells[0];
+    assert.ok(failCell.before.screenshot && failCell.after.screenshot, 'light cells are unaffected');
+    assert.match(failCell.afterDark.error, /navigation to another origin blocked: http:\/\/pr-visuals\.invalid/);
+    assert.ok(beforeBeacons.length > 0 && beforeBeacons.every((d) => d === 'false'), 'before is always light');
+    assert.ok(afterBeacons.includes('true') && afterBeacons.includes('false'));
+  } finally {
+    await browser.close();
+    before.close();
+    afterSrv.close();
+  }
+});
+
+test('without darkMode there is no after-dark cell', async (t) => {
+  try {
+    await (await launchChromium()).close();
+  } catch (err) {
+    t.skip(`Chromium cannot launch: ${String(err).split('\n')[0]}`);
+    return;
+  }
+  const srv = http.createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end('<h1>x</h1>');
+  });
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+  try {
+    const base = `http://127.0.0.1:${srv.address().port}`;
+    const out = path.join(tmp, 'light');
+    const { manifest, total } = await capture({
+      beforeUrl: base, afterUrl: base, outDir: out, viewports: { desktop: { width: 400, height: 300 } },
+      scenarios: [{ name: 'Home', path: '/', viewports: ['desktop'], video: false, steps: [] }],
+    });
+    assert.equal(total, 1);
+    assert.equal(manifest.darkMode, false);
+    assert.equal(manifest.scenarios[0].cells[0].afterDark, undefined);
+    await assert.rejects(stat(path.join(out, 'home', 'desktop-after-dark.png')));
+  } finally {
+    srv.close();
+  }
+});

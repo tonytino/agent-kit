@@ -333,7 +333,8 @@ async function cmdGenerate() {
     log(`Before: ${new URL(beforeUrl).origin}  After: ${new URL(afterUrl).origin}`);
 
     const { manifest, total, failed, beforeFailed } = await capture({
-      beforeUrl, afterUrl, scenarios, viewports: config.viewports, outDir, headers, fullPage: config.fullPage, log,
+      beforeUrl, afterUrl, scenarios, viewports: config.viewports, outDir, headers, fullPage: config.fullPage,
+      darkMode: config.darkMode, log,
     });
     if (beforeFailed) log(`${beforeFailed} before-side captures failed. They show as not present before this PR.`);
 
@@ -478,7 +479,7 @@ async function cmdCapture(args) {
   const headers = parseHeadersEnv(process.env.PR_VISUALS_HEADERS);
   const config = v.config
     ? await loadConfig(v.config, { requireSources: false })
-    : { viewports: { ...DEFAULT_VIEWPORTS }, fullPage: true };
+    : { viewports: { ...DEFAULT_VIEWPORTS }, fullPage: true, darkMode: false };
   const text = await readInput(v.scenarios);
   const names = Object.keys(config.viewports);
   // Accept a bare JSON file or a PR description that contains the scenarios block.
@@ -487,7 +488,8 @@ async function cmdCapture(args) {
   const afterUrl = httpUrl(v['after-url']);
   const outDir = path.resolve(v.out);
   const { manifest, total, failed } = await capture({
-    beforeUrl, afterUrl, scenarios, viewports: config.viewports, outDir, headers, fullPage: config.fullPage, log,
+    beforeUrl, afterUrl, scenarios, viewports: config.viewports, outDir, headers, fullPage: config.fullPage,
+    darkMode: config.darkMode, log,
   });
   process.stdout.write(`${JSON.stringify(manifest, null, 2)}\n`);
   log(`Captured ${total - failed} of ${total} after-side cells into ${outDir}. Manifest: ${path.join(outDir, 'manifest.json')}`);
@@ -515,7 +517,9 @@ async function readManifest(file) {
     if (err instanceof UserError) throw err;
     throw new UserError(`${file} is not valid JSON.`);
   }
-  if (data?.version !== 1 || !Array.isArray(data.scenarios)) throw new UserError(`${file} is not a pr-visuals manifest.`);
+  if (data?.version !== 1 || !Array.isArray(data.scenarios) || (data.darkMode !== undefined && typeof data.darkMode !== 'boolean')) {
+    throw new UserError(`${file} is not a pr-visuals manifest.`);
+  }
   return /** @type {import('./body.mjs').Manifest} */ (data);
 }
 
