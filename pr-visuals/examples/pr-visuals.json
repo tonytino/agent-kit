@@ -5,6 +5,5 @@
     "desktop": { "width": 1280, "height": 800 },
     "mobile": { "width": 390, "height": 844, "isMobile": true, "hasTouch": true, "deviceScaleFactor": 3 }
   },
-  "fullPage": true,
-  "darkMode": false
+  "fullPage": true
 }

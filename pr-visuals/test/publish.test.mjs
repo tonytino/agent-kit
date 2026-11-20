@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { after, test } from 'node:test';
-import { destPath, gitEnv, publishFiles } from '../src/publish.mjs';
+import { destPath, gitEnv, manifestFiles, publishFiles } from '../src/publish.mjs';
 
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'pr-visuals-pub-test-'));
 after(() => rm(tmp, { recursive: true, force: true }));
@@ -116,4 +116,14 @@ test('rejects unsafe file paths and remotes', async () => {
   await assert.rejects(publishFiles({ remote: 'file:///x', srcDir: tmp, files: ['../etc/passwd'], dest: 'p', message: 'm' }), /unsafe path/);
   await assert.rejects(publishFiles({ remote: '--upload-pack=x', srcDir: tmp, files: ['a.png'], dest: 'p', message: 'm' }), /Invalid git remote/);
   await assert.rejects(publishFiles({ remote: 'file:///x', srcDir: tmp, files: ['a.png'], dest: '../p', message: 'm' }), /Invalid base path/);
+});
+
+test('manifestFiles includes after-dark files only when darkMode is true', () => {
+  const cell = { viewport: 'desktop', before: { screenshot: 'h/desktop-before.png' }, after: { screenshot: 'h/desktop-after.png', video: 'h/desktop-after.webm' },
+    afterDark: { screenshot: 'h/desktop-after-dark.png', video: 'h/desktop-after-dark.webm' } };
+  const m = (darkMode) => ({ version: 1, darkMode, scenarios: [{ name: 'H', slug: 'h', video: true, cells: [cell] }] });
+  const light = ['h/desktop-before.png', 'h/desktop-after.png', 'h/desktop-after.webm'];
+  assert.deepEqual(manifestFiles(m(true)), [...light, 'h/desktop-after-dark.png', 'h/desktop-after-dark.webm']);
+  assert.deepEqual(manifestFiles(m(false)), light);
+  assert.deepEqual(manifestFiles(m(undefined)), light);
 });

@@ -192,8 +192,8 @@ export function manifestFiles(manifest) {
   const out = [];
   for (const sc of manifest.scenarios) {
     for (const c of sc.cells) {
-      for (const side of [c.before, c.after, c.afterDark]) {
-        if (!side) continue;
+      const sides = manifest.darkMode === true && c.afterDark ? [c.before, c.after, c.afterDark] : [c.before, c.after];
+      for (const side of sides) {
         if (side.screenshot) out.push(side.screenshot);
         if (side.video) out.push(side.video);
       }
