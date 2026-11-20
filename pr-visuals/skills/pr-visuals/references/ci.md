@@ -23,7 +23,7 @@ Nothing captures automatically. Only the `visuals:generate` label starts a captu
 The jobs use the action `tonytino/agent-kit/pr-visuals`. Pin it to the full commit SHA of a release tag. Tags have the form `pr-visuals-vX.Y.Z`.
 
 ```yaml
-- uses: tonytino/agent-kit/pr-visuals@<full-commit-sha> # pr-visuals-v0.1.0
+- uses: tonytino/agent-kit/pr-visuals@<full-commit-sha> # pr-visuals-v0.2.0
 ```
 
 In the example, replace `REPLACE_WITH_FULL_COMMIT_SHA` with that SHA. The workflow fails until you do.
@@ -59,6 +59,7 @@ Copy [`examples/pr-visuals.json`](https://github.com/tonytino/agent-kit/blob/mai
 | `after.timeoutMinutes` | No | Minutes to wait for a successful deployment, 1 to 120. Default: 15. |
 | `viewports` | No | 1 to 10 named viewports. Scenarios pick from these names. Default: `desktop` (1280x800) and `mobile` (390x844). |
 | `fullPage` | No | `false` captures only the viewport. Default: `true`. |
+| `darkMode` | No | `true` adds an After (dark) column. It captures the after URL again with `prefers-color-scheme: dark` emulated. This adds one capture per scenario and viewport. Before and after cells use `light`. An after (dark) failure fails the check like an after failure. Apps that pick the theme only from a stored user preference or a class toggle do not switch. Needs pr-visuals 0.2.0 or later: 0.1.0 rejects the key. First pin the action to `pr-visuals-v0.2.0` and merge. Then set `darkMode` and merge. It applies to PRs after the config change merges, because CI reads the config from the base branch. Default: `false`. |
 
 Viewport rules:
 

@@ -133,13 +133,14 @@ export function assertSha(sha) {
 
 /**
  * @typedef {{ screenshot?: string, video?: string, error?: string }} Side
- * @typedef {{ viewport: string, before: Side, after: Side }} Cell
+ * @typedef {{ viewport: string, before: Side, after: Side, afterDark?: Side }} Cell
  * @typedef {{ name: string, slug: string, video: boolean, cells: Cell[] }} ManifestScenario
- * @typedef {{ version: 1, scenarios: ManifestScenario[] }} Manifest
+ * @typedef {{ version: 1, darkMode?: boolean, scenarios: ManifestScenario[] }} Manifest
  */
 
 /**
- * Renders the visuals block from a capture manifest.
+ * Renders the visuals block from a capture manifest. With manifest.darkMode, the table has an
+ * After (dark) column.
  * @param {{ manifest: Manifest, owner: string, repo: string, basePath: string, sha: string, confirmed?: string[] }} opts
  * @returns {string}
  */
@@ -154,9 +155,11 @@ export function renderBlock({ manifest, owner, repo, basePath, sha, confirmed = 
     }
     return `https://github.com/${owner}/${repo}/blob/pr-visuals/${base}/${segs.join('/')}?raw=true`;
   };
+  const dark = manifest.darkMode === true;
+  const header = dark ? ['| Viewport | Before | After | After (dark) |', '| --- | --- | --- | --- |'] : ['| Viewport | Before | After |', '| --- | --- | --- |'];
   const lines = [START, renderMeta({ version: 1, sha, confirmed }), '## Visuals', ''];
   for (const sc of manifest.scenarios) {
-    lines.push(`### ${escapeText(sc.name)}`, '', '| Viewport | Before | After |', '| --- | --- | --- |');
+    lines.push(`### ${escapeText(sc.name)}`, '', ...header);
     /** @param {Side} side @param {string} label @param {string} vp */
     const cell = (side, label, vp) => {
       if (label === 'before' && (side.error || !side.screenshot)) {
@@ -168,14 +171,18 @@ export function renderBlock({ manifest, owner, repo, basePath, sha, confirmed = 
       return `<img src="${escapeAttr(url(side.screenshot))}" alt="${escapeAttr(`${sc.name} ${vp} ${label}`)}" width="400">`;
     };
     for (const c of sc.cells) {
-      lines.push(`| ${escapeText(c.viewport)} | ${cell(c.before, 'before', c.viewport)} | ${cell(c.after, 'after', c.viewport)} |`);
+      const cols = [escapeText(c.viewport), cell(c.before, 'before', c.viewport), cell(c.after, 'after', c.viewport)];
+      if (dark) cols.push(cell(c.afterDark ?? {}, 'after (dark)', c.viewport));
+      lines.push(`| ${cols.join(' | ')} |`);
     }
     if (sc.video) {
       lines.push('');
       for (const c of sc.cells) {
         const b = c.before.video ? `[before](${url(c.before.video)})` : 'before: none';
         const a = c.after.video ? `[after](${url(c.after.video)})` : 'after: none';
-        lines.push(`Video (${escapeText(c.viewport)}): ${b} · ${a}  `);
+        let d = '';
+        if (dark) d = c.afterDark?.video ? ` · [after (dark)](${url(c.afterDark.video)})` : ' · after (dark): none';
+        lines.push(`Video (${escapeText(c.viewport)}): ${b} · ${a}${d}  `);
       }
     }
     lines.push('');

@@ -4,6 +4,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each tool has 
 
 ## [Unreleased]
 
+## [pr-visuals 0.2.0] - 2026-11-20
+
+### Added
+- Config key `darkMode`. When `true`, each scenario and viewport gets an after (dark) cell in an After (dark) column. It captures the after URL with `prefers-color-scheme: dark`. Its failures count as after-side failures. It adds one capture per scenario and viewport.
+- Upgrade: pr-visuals 0.1.0 rejects `darkMode`. Pin the action to `pr-visuals-v0.2.0` and merge first. Then set `darkMode` and merge. CI reads the config from the PR base branch, so it applies to PRs after the config change merges.
+- The manifest records `darkMode`, so `render` and `publish` show the After (dark) column.
+
+### Changed
+- Before and after cells always capture with the `light` color scheme.
+
 ## Repository - 2026-11-05
 
 ### Changed
@@ -41,6 +51,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each tool has 
 - `block-self-bind-schedule` plugin. Denies `send_later` and self-bind `create_trigger`.
 
 [Unreleased]: https://github.com/tonytino/agent-kit/commits/main
+[pr-visuals 0.2.0]: https://github.com/tonytino/agent-kit/releases/tag/pr-visuals-v0.2.0
 [pr-visuals 0.1.0]: https://github.com/tonytino/agent-kit/releases/tag/pr-visuals-v0.1.0
 [block-self-bind-schedule 0.2.0]: https://github.com/tonytino/agent-kit/compare/v0.1.0...v0.2.0
 [block-self-bind-schedule 0.1.0]: https://github.com/tonytino/agent-kit/releases/tag/v0.1.0

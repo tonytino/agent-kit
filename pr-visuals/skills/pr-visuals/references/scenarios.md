@@ -85,14 +85,18 @@ Other cells still run. The table shows a failed cell by side:
 - After side: `capture failed: <reason>`. An after-side failure fails the pr-visuals check. `visuals:still-valid` does not override it. Fix the scenario and apply `visuals:generate` again.
 - Before side: `Not present before this PR`, with the reason in small text. This is expected when the PR adds the page or UI. A before-side failure does not fail the check.
 
+When the config sets `darkMode` to `true`, the table has an After (dark) column. Its cells are after-side cells. An after (dark) failure shows `capture failed: <reason>` and fails the check.
+
 ## How each cell is captured
 
-For each scenario, viewport, and side (before and after), pr-visuals:
+For each scenario, viewport, and side, pr-visuals does the steps below. The sides are before and after. When `darkMode` is on, after (dark) is a third side.
 
-1. Opens a fresh browser context with reduced motion.
+1. Opens a fresh browser context with reduced motion. The color scheme is `light` for before and after, and `dark` for after (dark).
 2. Opens `path` and waits for the network to go idle.
 3. Runs the steps in order.
 4. Takes a screenshot. It is full page unless the config sets `fullPage` to `false`. It also saves a video when `video` is `true`.
+
+The after (dark) cell runs the same steps. A step that toggles the theme inverts it in that cell.
 
 ## Choose scenarios
 

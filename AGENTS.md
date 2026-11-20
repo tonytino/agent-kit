@@ -49,7 +49,8 @@ CI also runs `shellcheck` on shell scripts and validates every JSON file.
 
 1. Set the version in `plugin.json`, `marketplace.json`, and `package.json` if the tool has one.
 2. Move the `CHANGELOG.md` entry under the version heading. Add the link reference to the tag.
-3. After the merge, tag the commit `<tool>-vX.Y.Z`, for example `pr-visuals-v0.1.0`. Push the tag.
+3. Update the version pins in docs and examples, for example `<tool>-vX.Y.Z` tags in pin comments and clone commands.
+4. After the merge, tag the commit `<tool>-vX.Y.Z`, for example `pr-visuals-v0.1.0`. Push the tag.
 
 ## Conventions
 

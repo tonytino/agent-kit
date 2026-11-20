@@ -41,7 +41,7 @@ jobs:
       # Example secret value: {"x-vercel-protection-bypass":"...","x-vercel-set-bypass-cookie":"true"}
       PR_VISUALS_HEADERS: ${{ secrets.PR_VISUALS_HEADERS }}
     steps:
-      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
+      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.2.0
         with:
           mode: generate
 
@@ -56,7 +56,7 @@ jobs:
       pull-requests: write
       issues: write
     steps:
-      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
+      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.2.0
         with:
           mode: still-valid
 
@@ -73,6 +73,6 @@ jobs:
       pull-requests: read
       issues: read
     steps:
-      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.1.0
+      - uses: tonytino/agent-kit/pr-visuals@REPLACE_WITH_FULL_COMMIT_SHA # pr-visuals-v0.2.0
         with:
           mode: check

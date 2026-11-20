@@ -69,3 +69,11 @@ test('capture refuses a symlinked scenarios file', async () => {
   assert.equal(r.status, 1);
   assert.match(r.stderr, /is a symlink/);
 });
+
+test('render refuses a manifest with a non-boolean darkMode', async () => {
+  const manifest = path.join(tmp, 'bad-dark.json');
+  await writeFile(manifest, JSON.stringify({ version: 1, darkMode: 'yes', scenarios: [] }));
+  const r = spawnSync(process.execPath, [bin, 'render', '--manifest', manifest, '--repo', 'o/r', '--pr', '3', '--sha', 'a'.repeat(40), '--base-path', 'p'], { encoding: 'utf8' });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /is not a pr-visuals manifest/);
+});

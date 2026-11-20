@@ -337,3 +337,66 @@ test('before-side failures do not fail generate or the check', async (t) => {
     api.server.close();
   }
 });
+
+/** Serves a page that leaves the origin only when prefers-color-scheme is dark. */
+async function withThemedSite(fn) {
+  const site = http.createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(`<h1>Home</h1><script>
+if (location.pathname === '/dark-breaks' && matchMedia('(prefers-color-scheme: dark)').matches) location.replace('http://pr-visuals.invalid/');
+</script>`);
+  });
+  await new Promise((r) => site.listen(0, '127.0.0.1', r));
+  try {
+    return await fn(`http://127.0.0.1:${site.address().port}`);
+  } finally {
+    site.close();
+  }
+}
+
+test('generate with darkMode publishes after-dark files and counts their failures', async (t) => {
+  if (!(await chromiumOk(t))) return;
+  await withThemedSite(async (siteUrl) => {
+    const scenarios = '<!-- pr-visuals:scenarios\n{"scenarios":[{"name":"Home","path":"/","viewports":["desktop"]},{"name":"Dark breaks","path":"/dark-breaks","viewports":["desktop"]}]}\n-->';
+    const api = await fakeGitHub(pr(scenarios), { before: { url: siteUrl }, after: { url: siteUrl }, darkMode: true });
+    const remoteRoot = await bareRemote('remotes-dark');
+    try {
+      const r = await run('generate', api, { GITHUB_SERVER_URL: `file://${remoteRoot}` });
+      assert.equal(r.code, 1, r.stderr);
+      const body = api.state.pr.body;
+      assert.match(body, /\| Viewport \| Before \| After \| After \(dark\) \|/);
+      assert.match(body, /blob\/pr-visuals\/pr-1\/1111111-77\/home\/desktop-after-dark\.png\?raw=true/);
+      assert.match(body, /\| desktop \| <img [^|]+ \| <img [^|]+ \| capture failed: navigation to another origin blocked/);
+      assert.ok(api.state.comments.at(-1).body.includes(marker({ kind: 'captured', sha: HEAD, failed: 1 })));
+      assert.match(api.state.comments.at(-1).body, /1 of 4 after-side captures failed/);
+      const tree = execFileSync('git', ['-C', path.join(remoteRoot, 'o', 'r.git'), 'ls-tree', '-r', '--name-only', 'pr-visuals'], { encoding: 'utf8' });
+      assert.match(tree, /pr-1\/1111111-77\/home\/desktop-after-dark\.png/);
+      const c = await run('check', api);
+      assert.equal(c.code, 1);
+    } finally {
+      api.server.close();
+    }
+  });
+});
+
+test('local capture honors darkMode from --config and render shows the dark column', async (t) => {
+  if (!(await chromiumOk(t))) return;
+  await withThemedSite(async (siteUrl) => {
+    const dir = path.join(tmp, 'local-dark');
+    await mkdir(dir, { recursive: true });
+    const cfg = path.join(dir, 'config.json');
+    await writeFile(cfg, JSON.stringify({ darkMode: true, viewports: { desktop: { width: 400, height: 300 } } }));
+    const sc = path.join(dir, 'scenarios.json');
+    await writeFile(sc, '{"scenarios":[{"name":"Home","path":"/"}]}');
+    const out = path.join(dir, 'out');
+    const r = await run('capture', { url: 'http://127.0.0.1:1' }, {}, ['--before-url', siteUrl, '--after-url', siteUrl, '--scenarios', sc, '--out', out, '--config', cfg]);
+    assert.equal(r.code, 0, r.stderr);
+    const manifest = JSON.parse(await readFile(path.join(out, 'manifest.json'), 'utf8'));
+    assert.equal(manifest.darkMode, true);
+    assert.equal(manifest.scenarios[0].cells[0].afterDark.screenshot, 'home/desktop-after-dark.png');
+    assert.match(r.stderr, /Captured 2 of 2 after-side cells/);
+    const rendered = execFileSync(process.execPath, [bin, 'render', '--manifest', path.join(out, 'manifest.json'), '--repo', 'o/r', '--pr', '1', '--sha', HEAD, '--base-path', 'pr-1/x'], { encoding: 'utf8' });
+    assert.match(rendered, /\| Viewport \| Before \| After \| After \(dark\) \|/);
+    assert.match(rendered, /pr-1\/x\/home\/desktop-after-dark\.png\?raw=true/);
+  });
+});
