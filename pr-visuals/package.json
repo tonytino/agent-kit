@@ -1,6 +1,6 @@
 {
   "name": "pr-visuals",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Before/after Playwright screenshots and videos in pull request descriptions, gated by labels.",
   "private": true,
   "type": "module",
